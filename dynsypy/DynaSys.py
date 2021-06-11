@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from scipy import signal
 
 import numpy as np
 
@@ -15,7 +16,8 @@ class System(ABC):
         self.x = np.array(x0)
         self.y = np.full((number_of_outputs, 1), 0)
 
-        self.t = t0
+        self.t0 = t0
+        self.t = self.t0
         self.dt = dt0
         self.dt_max = dt_max
 
@@ -491,6 +493,9 @@ class LinearSystem(System):
         self.C = np.array(C)
         self.D = np.array(D)
 
+        self.archive_frequency = np.array(0)
+        self.archive_bode = np.array([[]])
+
         # self.dt_estimate()
 
         self.y = self.C @ self.x + self.D @ self.u
@@ -807,3 +812,13 @@ class LinearSystem(System):
             self.value_control(x)
 
         self.matrix_shape_control(matrices)
+
+    def frequency_analysis(self, omega_range=None, n=100):
+
+        system = signal.StateSpace(self.A, self.B, self.C, self.D)
+
+        frequency_analysis_results = signal.bode(system, omega_range, n)
+
+        self.archive_frequency = frequency_analysis_results[0] / (2 * np.pi)
+        self.archive_bode = np.vstack((frequency_analysis_results[1],
+                                       frequency_analysis_results[2]))
