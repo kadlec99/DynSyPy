@@ -6,10 +6,10 @@ import numpy as np
 
 class Source(System, ABC):
 
-    def __init__(self, dt0=1.5e-5):
+    def __init__(self, dt0=1.5e-5, t0=0):
 
         super().__init__(dt0,
-                         x0=0, t0=0,
+                         t0, x0=0,
                          number_of_inputs=0, number_of_outputs=1,
                          allowed_error=1e-6, dt_max=1e-2)
 
@@ -55,11 +55,11 @@ class Source(System, ABC):
 # ----------------------------------------------------------------------------
 
 
-class TrigonometricFunctions(Source, ABC):
+class HarmonicFunctions(Source, ABC):
 
-    def __init__(self, amplitude, frequency, phase, dt0):
+    def __init__(self, amplitude, frequency, phase, dt0, t0):
 
-        super().__init__(dt0)
+        super().__init__(dt0, t0)
 
         self.amplitude = amplitude
         self.frequency = frequency
@@ -69,11 +69,11 @@ class TrigonometricFunctions(Source, ABC):
 # ----------------------------------------------------------------------------
 
 
-class Sine(TrigonometricFunctions):
+class Sine(HarmonicFunctions):
 
-    def __init__(self, amplitude, frequency, phase, dt0=1.5e-5):
+    def __init__(self, amplitude, frequency, phase, dt0=1.5e-5, t0=0):
 
-        super().__init__(amplitude, frequency, phase, dt0)
+        super().__init__(amplitude, frequency, phase, dt0, t0)
 
     def source_function(self, t):
 
@@ -83,11 +83,11 @@ class Sine(TrigonometricFunctions):
 # ----------------------------------------------------------------------------
 
 
-class Cosine(TrigonometricFunctions):
+class Cosine(HarmonicFunctions):
 
-    def __init__(self, amplitude, frequency, phase, dt0=1.5e-5):
+    def __init__(self, amplitude, frequency, phase, dt0=1.5e-5, t0=0):
 
-        super().__init__(amplitude, frequency, phase, dt0)
+        super().__init__(amplitude, frequency, phase, dt0, t0)
 
     def source_function(self, t):
 
@@ -99,12 +99,15 @@ class Cosine(TrigonometricFunctions):
 
 class UnitStep(Source):
 
-    def __init__(self, parameter=1, dt0=1.5e-5):
+    def __init__(self, parameter=1, dt0=1.5e-5, t0=0):
 
-        super().__init__(dt0)
+        super().__init__(dt0, t0)
 
         self.parameter = parameter
 
     def source_function(self, t):
 
-        return self.parameter
+        if t >= self.t0:
+            return self.parameter
+        else:
+            return 0.0

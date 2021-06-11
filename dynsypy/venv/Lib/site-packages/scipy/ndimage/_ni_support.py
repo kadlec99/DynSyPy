@@ -29,7 +29,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from collections.abc import Iterable
-import warnings
 import numpy
 
 
@@ -40,16 +39,12 @@ def _extend_mode_to_code(mode):
         return 0
     elif mode == 'wrap':
         return 1
-    elif mode in ['reflect', 'grid-mirror']:
+    elif mode == 'reflect':
         return 2
     elif mode == 'mirror':
         return 3
     elif mode == 'constant':
         return 4
-    elif mode == 'grid-wrap':
-        return 5
-    elif mode == 'grid-constant':
-        return 6
     else:
         raise RuntimeError('boundary mode not supported')
 
@@ -70,28 +65,17 @@ def _normalize_sequence(input, rank):
     return normalized
 
 
-def _get_output(output, input, shape=None, complex_output=False):
+def _get_output(output, input, shape=None):
     if shape is None:
         shape = input.shape
     if output is None:
-        if not complex_output:
-            output = numpy.zeros(shape, dtype=input.dtype.name)
-        else:
-            complex_type = numpy.promote_types(input.dtype, numpy.complex64)
-            output = numpy.zeros(shape, dtype=complex_type)
+        output = numpy.zeros(shape, dtype=input.dtype.name)
     elif isinstance(output, (type, numpy.dtype)):
         # Classes (like `np.float32`) and dtypes are interpreted as dtype
-        if complex_output and numpy.dtype(output).kind != 'c':
-            warnings.warn("promoting specified output dtype to complex")
-            output = numpy.promote_types(output, numpy.complex64)
         output = numpy.zeros(shape, dtype=output)
     elif isinstance(output, str):
-        output = numpy.sctypeDict[output]
-        if complex_output and numpy.dtype(output).kind != 'c':
-            raise RuntimeError("output must have complex dtype")
+        output = numpy.typeDict[output]
         output = numpy.zeros(shape, dtype=output)
     elif output.shape != shape:
         raise RuntimeError("output shape not correct")
-    elif complex_output and output.dtype.kind != 'c':
-        raise RuntimeError("output must have complex dtype")
     return output

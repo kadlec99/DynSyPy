@@ -54,7 +54,7 @@ def get_cxx_std_flag(compiler):
         if flag is None:
             return None
 
-        if has_flag(compiler, flag, ext='.cpp'):
+        if has_flag(compiler, flag):
             return flag
 
     from numpy.distutils import log
@@ -75,7 +75,7 @@ def get_c_std_flag(compiler):
     if flag is None:
         return None
 
-    if has_flag(compiler, flag, ext='.c'):
+    if has_flag(compiler, flag):
         return flag
 
     from numpy.distutils import log
