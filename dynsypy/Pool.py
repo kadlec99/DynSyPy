@@ -23,6 +23,10 @@ class Pool:
 
         while self.t < self.t_end:
             self.t = self.t + self.dt
+
+            if self.t > self.t_end:
+                self.t = self.t_end
+
             for system in self.systems:
                 if self.adaptive_step:
                     system.adaptive_step(self.t)
