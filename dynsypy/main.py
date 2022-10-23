@@ -71,51 +71,82 @@ def plotter_log_axis(freq_array, val_array):
 
 t0 = 0
 # dt0 = 1.5e-5
-t_end = 0.15
+t_end = 1.2
 
-i_a0 = 0.0
-omega0 = 0.0
+x0 = np.array([[0.0],
+               [0.0],
+               [0.0],
+               [0.0],
+               [0.0]])
 
-x0 = np.array([[i_a0],
-               [omega0]])
+f = 50
+U = 150
 
-u_a = 5
-M_L = 0.1
+phase_U = Cosine(U, f, 0)
+phase_V = Cosine(U, f, 4 * np.pi / 3)
+phase_W = Cosine(U, f, 2 * np.pi / 3)
 
-R_a = 2.7
-L_a = 4e-3
-k_a = 0.105
-J = 1e-4
-B_m = 93e-7
+motor = AsynchronousMotor(x0=x0, number_of_inputs=3, dt0=5e-5)
 
-A = np.array([[-R_a / L_a, -k_a / L_a],
-              [k_a / J, -B_m / J]])
+motor.connect(phase_U.output, 0)
+motor.connect(phase_V.output, 1)
+motor.connect(phase_W.output, 2)
 
-B = np.array([[1 / L_a, 0],
-              [0, -1 / J]])
+pool = Pool(0.01, t_end, t0, False)
 
-C = np.array([[1, 0],
-              [0, 1]])
+pool.add(motor)
 
-D = np.array([[0, 0],
-              [0, 0]])
+# pool.add(phase_U)
+# pool.add(phase_V)
+# pool.add(phase_W)
 
-
-pool = Pool(0.01, t_end, t0)
-
-voltage = UnitStep(u_a)
-
-load_torque = UnitStep(M_L)
-
-DC_motor = LinearSystem(A, B, C, D, t0=t0, x0=x0,
-                        number_of_inputs=2, number_of_outputs=2)
-
-# # DC_motor = LinearSystem(A, B, C, D, dt0=dt0, t0=t0, x0=x0,
-# #                         number_of_inputs=2, number_of_outputs=2)
-DC_motor.connect(voltage.output, 0)
-DC_motor.connect(load_torque.output, 1)
-
-pool.add(DC_motor)
+# t0 = 0
+# # dt0 = 1.5e-5
+# t_end = 0.15
+#
+# i_a0 = 0.0
+# omega0 = 0.0
+#
+# x0 = np.array([[i_a0],
+#                [omega0]])
+#
+# u_a = 5
+# M_L = 0.1
+#
+# R_a = 2.7
+# L_a = 4e-3
+# k_a = 0.105
+# J = 1e-4
+# B_m = 93e-7
+#
+# A = np.array([[-R_a / L_a, -k_a / L_a],
+#               [k_a / J, -B_m / J]])
+#
+# B = np.array([[1 / L_a, 0],
+#               [0, -1 / J]])
+#
+# C = np.array([[1, 0],
+#               [0, 1]])
+#
+# D = np.array([[0, 0],
+#               [0, 0]])
+#
+#
+# pool = Pool(0.01, t_end, t0)
+#
+# voltage = UnitStep(u_a)
+#
+# load_torque = UnitStep(M_L)
+#
+# DC_motor = LinearSystem(A, B, C, D, t0=t0, x0=x0,
+#                         number_of_inputs=2, number_of_outputs=2)
+#
+# # # DC_motor = LinearSystem(A, B, C, D, dt0=dt0, t0=t0, x0=x0,
+# # #                         number_of_inputs=2, number_of_outputs=2)
+# DC_motor.connect(voltage.output, 0)
+# DC_motor.connect(load_torque.output, 1)
+#
+# pool.add(DC_motor)
 
 # iL0 = 0.0
 # uC0 = 0.0
@@ -223,6 +254,31 @@ pool.simulate()
 # plotter(transient_2.archive_t, transient_2.archive_x)
 # # plotter(sine.archive_t, sine.archive_x)
 
-plotter(DC_motor.archive_t, DC_motor.archive_y)
+# plotter(DC_motor.archive_t, DC_motor.archive_y)
+# plotter(motor.archive_t, motor.archive_y)
 
 # plotter_log_axis(transient_2.archive_frequency, transient_2.archive_bode)
+
+# fig, axs = plt.subplots(3)
+# axs[0].plot(out[:, [0]], out[:, [1, 2, 3]])
+# # axs[1].plot(out[:, [0]], out[:, [4, 5]])
+# # axs[2].plot(out[:, [0]], out[:, [6, 7]])
+# axs[1].plot(out[:, [0]], out[:, [8, 9, 10]])
+# axs[2].plot(out[:, [0]], out[:, [13]])
+
+# plt.plot(motor.archive_t, motor.archive_u[0, :],
+#          motor.archive_t, motor.archive_u[1, :],
+#          motor.archive_t, motor.archive_u[2, :])
+
+fig, axs = plt.subplots(2)
+axs[0].plot(motor.archive_t, motor.archive_x[0, :],
+            motor.archive_t, motor.archive_x[1, :])
+
+axs[1].plot(motor.archive_t, motor.archive_x[4, :])
+
+# plt.plot(motor.archive_t, motor.archive_x[0, :],
+#          motor.archive_t, motor.archive_x[1, :])
+
+# plt.savefig('asm.pdf')
+
+plt.show()

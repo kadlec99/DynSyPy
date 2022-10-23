@@ -33,6 +33,13 @@ class System(ABC):
 
         self.last_used_archive_index = 0
 
+    def data_archiving(self):
+
+        self.archive_x = np.append(self.archive_x, self.x, axis=1)
+        self.archive_y = np.append(self.archive_y, self.y, axis=1)
+        self.archive_u = np.append(self.archive_u, self.u, axis=1)
+        self.archive_t = np.append(self.archive_t, self.t)
+
     def connect(self, source, position=0):
 
         try:
@@ -53,10 +60,8 @@ class System(ABC):
             # self.runge_kutta_45_step()
             # self.runge_kutta_fehlberg_step(end_of_pool_step)
             self.update_output()
-            self.archive_x = np.append(self.archive_x, self.x, axis=1)
-            self.archive_y = np.append(self.archive_y, self.y, axis=1)
-            self.archive_u = np.append(self.archive_u, self.u, axis=1)
-            self.archive_t = np.append(self.archive_t, self.t)
+
+            self.data_archiving()
 
     def runge_kutta_step(self):
         """integration"""
@@ -162,10 +167,8 @@ class System(ABC):
                 self.dt = h
 
                 self.update_output()
-                self.archive_x = np.append(self.archive_x, self.x, axis=1)
-                self.archive_y = np.append(self.archive_y, self.y, axis=1)
-                self.archive_u = np.append(self.archive_u, self.u, axis=1)
-                self.archive_t = np.append(self.archive_t, self.t)
+
+                self.data_archiving()
 
             # Now compute next step size, and make sure that it is not too big or too small.
 
@@ -473,6 +476,9 @@ class System(ABC):
     def null_input(t):
 
         return 0.0
+
+
+# ----------------------------------------------------------------------------
 
 
 class LinearSystem(System):

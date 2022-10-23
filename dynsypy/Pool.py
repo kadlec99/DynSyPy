@@ -11,7 +11,7 @@ class Pool:
         self.adaptive_step = adaptive_step
 
     def add(self, system):
-        """adds the system to the self.systems list
+        """adds the system to the "self.systems" list
 
         NOTES:
               This list contains systems that must be simulated simultaneously.
