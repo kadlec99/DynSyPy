@@ -271,6 +271,7 @@ pool.simulate()
 #          motor.archive_t, motor.archive_u[2, :])
 
 fig, axs = plt.subplots(2)
+plt.grid()
 axs[0].plot(motor.archive_t, motor.archive_x[0, :],
             motor.archive_t, motor.archive_x[1, :])
 
