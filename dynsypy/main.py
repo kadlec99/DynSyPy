@@ -4,8 +4,10 @@ import numpy as np
 from dynsypy import *
 
 
-# TODO: Připravit testovací příklady pomocí scipy.integrate.odeint (motor)
-# TODO: Udělat ze zdrojů systémy
+# TODO: alokace pameti pred vypoctem (?linked list?)
+# TODO: N-fazovy zdroj rizeny
+# TODO: rovnice motoru v maticovem tvaru => nova trida Matrix, NonlinearSystem
+# TODO: rovnice v dq
 
 
 def plotter(t_array, y_array):
@@ -71,7 +73,7 @@ def plotter_log_axis(freq_array, val_array):
 
 t0 = 0
 # dt0 = 1.5e-5
-t_end = 1.2
+t_end = 0.5
 
 x0 = np.array([[0.0],
                [0.0],
@@ -80,13 +82,28 @@ x0 = np.array([[0.0],
                [0.0]])
 
 f = 50
-U = 150
+U = np.sqrt(2) * 380     # 150
+
+motor_params = {
+    "R_s": 1.617,
+    "R_r": 1.609,
+    "L_s_sigma": 8.5e-3,
+    "L_h": 134.4e-3,
+    "p_p": 2,
+    "N_n": 1420,
+    "U_n": 150,  # 380    # 3x380
+    "f_s_n": 50,
+    "I_s_n": 8.5,
+    "J": 0.03,
+    "k_p": 1.5
+}
 
 phase_U = Cosine(U, f, 0)
 phase_V = Cosine(U, f, 4 * np.pi / 3)
 phase_W = Cosine(U, f, 2 * np.pi / 3)
 
-motor = AsynchronousMotor(x0=x0, number_of_inputs=3, dt0=5e-5)
+motor = AsynchronousMotor(motor_params,
+                          x0=x0, number_of_inputs=3, dt0=5e-5)
 
 motor.connect(phase_U.output, 0)
 motor.connect(phase_V.output, 1)
@@ -270,13 +287,15 @@ pool.simulate()
 #          motor.archive_t, motor.archive_u[1, :],
 #          motor.archive_t, motor.archive_u[2, :])
 
-fig, axs = plt.subplots(2)
-axs[0].plot(motor.archive_t, motor.archive_x[0, :],
-            motor.archive_t, motor.archive_x[1, :])
-plt.grid()
-
-axs[1].plot(motor.archive_t, motor.archive_x[4, :])
-plt.grid()
+fig, axs = plt.subplots(3)
+axs[0].plot(motor.archive_t, motor.archive_y[0, :],
+            motor.archive_t, motor.archive_y[1, :])
+axs[0].grid()
+axs[1].plot(motor.archive_t, motor.archive_y[2, :],
+            motor.archive_t, motor.archive_y[3, :])
+axs[1].grid()
+axs[2].plot(motor.archive_t, motor.archive_y[4, :])
+axs[2].grid()
 
 # plt.plot(motor.archive_t, motor.archive_x[0, :],
 #          motor.archive_t, motor.archive_x[1, :])

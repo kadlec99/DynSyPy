@@ -6,29 +6,13 @@ import numpy as np
 
 class Source(System, ABC):
 
-    def __init__(self, dt0=1.5e-5, t0=0):
+    def __init__(self, number_of_inputs, number_of_outputs,
+                 dt0=1.5e-5, t0=0, x0=0):
 
         super().__init__(dt0,
-                         t0, x0=0,
-                         number_of_inputs=0, number_of_outputs=1,
+                         t0, x0,
+                         number_of_inputs, number_of_outputs,
                          allowed_error=1e-6, dt_max=1e-2)
-
-    def step(self, end_of_pool_step):
-
-        while self.t < end_of_pool_step:
-            self.t = self.t + self.dt
-
-            if self.t > end_of_pool_step:
-                self.t = end_of_pool_step
-
-            # self.update_input()
-            self.update_state()
-            self.update_output()
-            # self.archive_x = np.append(self.archive_x, self.x, axis=1)
-            self.archive_x = np.append(self.archive_x, self.x)
-            self.archive_y = np.append(self.archive_y, self.y)
-            # self.archive_u = np.append(self.archive_u, self.u)
-            self.archive_t = np.append(self.archive_t, self.t)
 
     def adaptive_step(self, end_of_pool_step):
 
@@ -55,11 +39,53 @@ class Source(System, ABC):
 # ----------------------------------------------------------------------------
 
 
-class HarmonicFunctions(Source, ABC):
+class UncontrolledSource(Source, ABC):
+
+    def __init__(self, number_of_outputs,
+                 dt0=1.5e-5, t0=0, x0=0):
+
+        super().__init__(number_of_inputs=0,
+                         number_of_outputs=number_of_outputs,
+                         dt0=dt0, t0=t0, x0=x0)
+
+    def step(self, end_of_pool_step):
+
+        while self.t < end_of_pool_step:
+            self.t = self.t + self.dt
+
+            if self.t > end_of_pool_step:
+                self.t = end_of_pool_step
+
+            # self.update_input()
+            self.update_state()
+            self.update_output()
+            # self.archive_x = np.append(self.archive_x, self.x, axis=1)
+            self.archive_x = np.append(self.archive_x, self.x)
+            self.archive_y = np.append(self.archive_y, self.y)
+            # self.archive_u = np.append(self.archive_u, self.u)
+            self.archive_t = np.append(self.archive_t, self.t)
+
+
+# ----------------------------------------------------------------------------
+
+
+class ControlledSource(Source, ABC):
+
+    def __init__(self, number_of_inputs, number_of_outputs,
+                 dt0=1.5e-5, t0=0, x0=0):
+
+        super().__init__(dt0,
+                         t0, x0,
+                         number_of_inputs, number_of_outputs)
+
+# ----------------------------------------------------------------------------
+
+
+class HarmonicFunctions(UncontrolledSource, ABC):
 
     def __init__(self, amplitude, frequency, phase, dt0, t0):
 
-        super().__init__(dt0, t0)
+        super().__init__(1, dt0, t0)
 
         self.amplitude = amplitude
         self.frequency = frequency
@@ -101,7 +127,7 @@ class UnitStep(Source):
 
     def __init__(self, parameter=1, dt0=1.5e-5, t0=0):
 
-        super().__init__(dt0, t0)
+        super().__init__(1, dt0, t0)
 
         self.parameter = parameter
 
