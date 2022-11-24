@@ -9,7 +9,18 @@ class System(ABC):
     def __init__(self, dt0=1.5e-5, t0=0, x0=0,
                  number_of_inputs=1, number_of_outputs=1,
                  allowed_error=1e-6, dt_max=1e-2):
+        """
 
+        Parameters
+        ----------
+        dt0: float
+        t0: float
+        x0: numpy.ndarray/float
+        number_of_inputs: int
+        number_of_outputs: int
+        allowed_error: float
+        dt_max: float
+        """
         self.sources = [self.null_input]
 
         self.u = np.full((number_of_inputs, 1), self.sources[0](0))
@@ -193,7 +204,12 @@ class System(ABC):
         self.u = np.transpose(np.array([source_t]))
 
     def equation_of_state(self, t, x):
+        """
 
+        Returns
+        -------
+        numpy.ndarray/float
+        """
         pass
 
     # def runge_kutta_45_step(self):
@@ -828,3 +844,35 @@ class LinearSystem(System):
         self.archive_frequency = frequency_analysis_results[0] / (2 * np.pi)
         self.archive_bode = np.vstack((frequency_analysis_results[1],
                                        frequency_analysis_results[2]))
+
+
+# ----------------------------------------------------------------------------
+
+
+def f1(x):
+    return x
+
+
+def f2(x):
+    return x ** 2
+
+
+class Matrix:
+
+    def __init__(self):
+        self.A = np.zeros([2, 2])
+        self.indexy = [[0, 0], [1, 1]]
+        self.funkce = [f1, f2]
+
+    def eval(self, x):
+        i = 0
+        for index in self.indexy:
+            self.A[index[0], index[1]] = self.funkce[i](x)
+            i += 1
+
+
+# x = 2
+# A = Matrix()
+# A.eval(x)
+#
+# print(A.A)

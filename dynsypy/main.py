@@ -88,6 +88,7 @@ motor_params = {
     "R_s": 1.617,
     "R_r": 1.609,
     "L_s_sigma": 8.5e-3,
+    "L_r_sigma": 8.5e-3,
     "L_h": 134.4e-3,
     "p_p": 2,
     "N_n": 1420,
@@ -98,12 +99,81 @@ motor_params = {
     "k_p": 1.5
 }
 
-phase_U = Cosine(U, f, 0)
-phase_V = Cosine(U, f, 4 * np.pi / 3)
-phase_W = Cosine(U, f, 2 * np.pi / 3)
+number_of_phases = 3
+
+source_params = {
+    "amplitude": U,
+    "frequency": f,
+    "number_of_phases": number_of_phases,
+    "phase": 0
+}
+
+# source_U_params = {
+#     "amplitude": U,
+#     "frequency": f,
+#     "phase": 0
+# }
+#
+# source_V_params = {
+#     "amplitude": U,
+#     "frequency": f,
+#     "phase": 4 * np.pi / 3
+# }
+#
+# source_W_params = {
+#     "amplitude": U,
+#     "frequency": f,
+#     "phase": 2 * np.pi / 3
+# }
+
+source_U_params = {
+    "amplitude": U,
+    "frequency": f,
+    "number_of_phases": 1,
+    "phase": 0
+}
+
+source_V_params = {
+    "amplitude": U,
+    "frequency": f,
+    "number_of_phases": 1,
+    "phase": 4 * np.pi / 3
+}
+
+source_W_params = {
+    "amplitude": U,
+    "frequency": f,
+    "number_of_phases": 1,
+    "phase": 2 * np.pi / 3
+}
+
+amplitude = UnitStep(U)
+frequency = UnitStep(f)
+
+# phase_U = Sine(source_U_params)
+# phase_V = Sine(source_V_params)
+# phase_W = Sine(source_W_params)
+
+source = ControlledNPhaseSine(source_params)
+
+phase_U = ControlledNPhaseSine(source_U_params)
+phase_V = ControlledNPhaseSine(source_V_params)
+phase_W = ControlledNPhaseSine(source_W_params)
 
 motor = AsynchronousMotor(motor_params,
                           x0=x0, number_of_inputs=3, dt0=5e-5)
+
+source.connect(amplitude.output, 0)
+source.connect(frequency.output, 1)
+
+phase_U.connect(amplitude.output, 0)
+phase_U.connect(frequency.output, 1)
+
+phase_V.connect(amplitude.output, 0)
+phase_V.connect(frequency.output, 1)
+
+phase_W.connect(amplitude.output, 0)
+phase_W.connect(frequency.output, 1)
 
 motor.connect(phase_U.output, 0)
 motor.connect(phase_V.output, 1)
@@ -111,11 +181,13 @@ motor.connect(phase_W.output, 2)
 
 pool = Pool(0.01, t_end, t0, False)
 
+pool.add(amplitude)
+pool.add(frequency)
+# pool.add(source)
+pool.add(phase_U)
+pool.add(phase_V)
+pool.add(phase_W)
 pool.add(motor)
-
-# pool.add(phase_U)
-# pool.add(phase_V)
-# pool.add(phase_W)
 
 # t0 = 0
 # # dt0 = 1.5e-5
@@ -299,6 +371,18 @@ axs[2].grid()
 
 # plt.plot(motor.archive_t, motor.archive_x[0, :],
 #          motor.archive_t, motor.archive_x[1, :])
+
+# plt.plot(amplitude.archive_t, amplitude.archive_x,
+#          frequency.archive_t, frequency.archive_x,
+#          phase_U.archive_t, phase_U.archive_x[0, :])
+
+# for i in range(0, number_of_phases):
+#     plt.plot(source.archive_t, source.archive_y[i, :])
+# plt.grid()
+
+# plt.plot(phase_U.archive_t, phase_U.archive_x,
+#          phase_V.archive_t, phase_V.archive_x,
+#          phase_W.archive_t, phase_W.archive_x)
 
 # plt.savefig('asm.pdf')
 

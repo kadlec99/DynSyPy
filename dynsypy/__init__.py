@@ -1,9 +1,13 @@
 from .DynaSys import System, LinearSystem
 from .Pool import Pool
 from .Motors import AsynchronousMotor
-from .Sources import Source, HarmonicFunctions, Sine, Cosine, UnitStep
+from .Sources import Source, UncontrolledSource, ControlledSource,\
+    HarmonicFunctions, Sine, Cosine, UnitStep,\
+    ControlledSine, ControlledNPhaseSine
 
 __all__ = ['System', 'LinearSystem',
            'Pool',
            'AsynchronousMotor',
-           'Source', 'HarmonicFunctions', 'Sine', 'Cosine', 'UnitStep']
+           'Source', 'UncontrolledSource', 'ControlledSource',
+           'HarmonicFunctions', 'Sine', 'Cosine', 'UnitStep',
+           'ControlledSine', 'ControlledNPhaseSine']

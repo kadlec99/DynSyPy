@@ -60,6 +60,7 @@ class AsynchronousMotor(Motor):
         self.R_s = parameters["R_s"]    # 1.617
         self.R_r = parameters["R_r"]    # 1.609
         self.L_s_sigma = parameters["L_s_sigma"]    # 8.5e-3
+        self.L_r_sigma = parameters["L_r_sigma"]    # 8.5e-3
         self.L_h = parameters["L_h"]    # 134.4e-3
         self.p_p = parameters["p_p"]    # 2
         self.N_n = parameters["N_n"]    # 1420
@@ -70,7 +71,7 @@ class AsynchronousMotor(Motor):
         self.k_p = parameters["k_p"]    # 1.5
 
         self.L_s = self.L_s_sigma + self.L_h
-        self.L_r = self.L_s_sigma + self.L_h
+        self.L_r = self.L_r_sigma + self.L_h
 
         lmb = self.L_s_sigma + self.L_s_sigma * (self.L_h / self.L_r)
 
