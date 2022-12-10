@@ -58,6 +58,14 @@ class System(ABC):
         except IndexError:
             self.sources.append(source)
 
+    def connect_vector(self, source_vector, position=0):
+
+        for i in range(len(source_vector)):
+            try:
+                self.sources[position + i] = source_vector[i, 0]
+            except IndexError:
+                self.sources.append(source_vector[i, 0])
+
     def step(self, end_of_pool_step):
 
         while self.t < end_of_pool_step:

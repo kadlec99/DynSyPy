@@ -4,10 +4,12 @@ import numpy as np
 from dynsypy import *
 
 
-# TODO: alokace pameti pred vypoctem (?linked list?)
-# TODO: N-fazovy zdroj rizeny
-# TODO: rovnice motoru v maticovem tvaru => nova trida Matrix, NonlinearSystem
+# TODO: alokace pameti pred vypoctem
+# TODO: N-fazovy zdroj rizeny - nova metoda connectVector()
+# TODO: rovnice motoru v maticovem tvaru => nova trida Matrix,
+#  NonlinearSystem + potomek uvazujici maticovy popis (kvazinelinearni, ...)
 # TODO: rovnice v dq
+# TODO: integrace v extra modulu (třída nebo funkce)
 
 
 def plotter(t_array, y_array):
@@ -160,8 +162,8 @@ phase_U = ControlledNPhaseSine(source_U_params)
 phase_V = ControlledNPhaseSine(source_V_params)
 phase_W = ControlledNPhaseSine(source_W_params)
 
-motor = AsynchronousMotor(motor_params,
-                          x0=x0, number_of_inputs=3, dt0=5e-5)
+motor = AsynchronousMachine(motor_params,
+                            x0=x0, number_of_inputs=3, dt0=5e-5)
 
 source.connect(amplitude.output, 0)
 source.connect(frequency.output, 1)

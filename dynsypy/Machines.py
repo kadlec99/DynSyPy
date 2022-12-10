@@ -4,7 +4,7 @@ from DynaSys import System
 import numpy as np
 
 
-class Motor(System, ABC):
+class Machine(System, ABC):
 
     def __init__(self, dt0=1.5e-5, t0=0, x0=0,
                  number_of_inputs=3, number_of_outputs=1,
@@ -46,7 +46,7 @@ class Motor(System, ABC):
 # ----------------------------------------------------------------------------
 
 
-class AsynchronousMotor(Motor):
+class AsynchronousMachine(Machine):
 
     def __init__(self, parameters, dt0=1.5e-5, t0=0, x0=0,
                  number_of_inputs=3, allowed_error=1e-6, dt_max=1e-2):
