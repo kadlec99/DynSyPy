@@ -104,21 +104,21 @@ class AsynchronousMachine(Machine):
 
         # disx = -alpha * isx + beta * psirx + gamma * wm * psiry + delta * usx;
         # disy = -alpha * isy - gamma * wm * psirx + beta * psiry + delta * usy;
-        # dpsirx = R_r * isx * (L_h / L_r) - (R_r / L_r) * psirx - p_p * wm * psiry;
-        # dpsiry = R_r * (L_h * isy / L_r) - (R_r / L_r) * psiry + p_p * wm * psirx;
-        # dwm = epsilon * psirx * isy - epsilon * psiry * isx - Mz / J;
+        # dpsirx = R_r * (L_h / L_r) * isx - (R_r / L_r) * psirx - p_p * wm * psiry;
+        # dpsiry = R_r * (L_h / L_r) * isy + p_p * wm * psirx - (R_r / L_r) * psiry;
+        # dwm = -epsilon * psiry * isx + epsilon * psirx * isy - Mz / J;
 
         dx1 = -self.alpha * x1 + self.beta * x3 + self.gamma * x5 * x4 + self.delta * u_alpha
         dx2 = -self.alpha * x2 - self.gamma * x5 * x3 + self.beta * x4 + self.delta * u_beta
-        dx3 = self.R_r * x1 * (self.L_h / self.L_r) - (self.R_r / self.L_r) * x3 - self.p_p * x5 * x4
-        dx4 = self.R_r * (self.L_h * x2 / self.L_r) - (self.R_r / self.L_r) * x4 + self.p_p * x5 * x3
-        dx5 = self.epsilon * x3 * x2 - self.epsilon * x4 * x1 - self.M_z / self.J
+        dx3 = self.R_r * (self.L_h / self.L_r) * x1 - (self.R_r / self.L_r) * x3 - self.p_p * x5 * x4
+        dx4 = self.R_r * (self.L_h / self.L_r) * x2 + self.p_p * x5 * x3 - (self.R_r / self.L_r) * x4
+        dx5 = -self.epsilon * x4 * x1 + self.epsilon * x3 * x2 - self.M_z / self.J
 
         # dx1 = -self.alpha * x1 + self.beta * x3 + self.gamma * x5 * x4 + self.delta * u_d
         # dx2 = -self.alpha * x2 - self.gamma * x5 * x3 + self.beta * x4 + self.delta * u_q
-        # dx3 = self.R_r * x1 * (self.L_h / self.L_r) - (self.R_r / self.L_r) * x3 - self.p_p * x5 * x4
-        # dx4 = self.R_r * (self.L_h * x2 / self.L_r) - (self.R_r / self.L_r) * x4 + self.p_p * x5 * x3
-        # dx5 = self.epsilon * x3 * x2 - self.epsilon * x4 * x1 - self.M_z / self.J
+        # dx3 = self.R_r * (self.L_h / self.L_r) * x1 - (self.R_r / self.L_r) * x3 - self.p_p * x5 * x4
+        # dx4 = self.R_r * (self.L_h / self.L_r) * x2 + self.p_p * x5 * x3 - (self.R_r / self.L_r) * x4
+        # dx5 = -self.epsilon * x4 * x1 + self.epsilon * x3 * x2 - self.M_z / self.J
 
         dx = np.array([[dx1],
                        [dx2],
