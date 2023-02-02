@@ -1,5 +1,5 @@
 from abc import ABC     # , abstractmethod
-from DynaSys import System
+from DynaSys import System, Matrix
 
 import numpy as np
 
@@ -81,50 +81,87 @@ class AsynchronousMachine(Machine):
         self.delta = 1 / lmb
         self.epsilon = ((self.k_p * self.p_p) / self.J) * (self.L_h / self.L_r)
 
-        self.M_z = 0  # Moment zateze
+        self.M_z = 0  # Load torque
 
         self.Theta = 0
 
+        a_init = np.array([[-self.alpha, 0, self.beta, self.gamma * self.x[4, 0], 0],
+                           [0, -self.alpha, -self.gamma * self.x[4, 0], self.beta, 0],
+                           [self.R_r * (self.L_h / self.L_r), 0, -self.R_r / self.L_r, -self.x[4, 0], 0],
+                           [0, self.R_r * (self.L_h / self.L_r), self.x[4, 0], -self.R_r / self.L_r, 0],
+                           [-self.epsilon * self.x[3, 0], self.epsilon * self.x[2, 0], 0, 0, 0]])
+
+        non_linearity_functions = [self.non_linearity_03, self.non_linearity_12, self.non_linearity_23,
+                                   self.non_linearity_32, self.non_linearity_40, self.non_linearity_41]
+
+        non_linearity_indexes = [[0, 3], [1, 2], [2, 3], [3, 2], [4, 0], [4, 1]]
+
+        self.A = Matrix(a_init, non_linearity_functions, non_linearity_indexes)
+        self.B = np.array([[self.delta, 0, 0],
+                           [0, self.delta, 0],
+                           [0, 0, 0],
+                           [0, 0, 0],
+                           [0, 0, -1 / self.J]])
+
+    def non_linearity_03(self, t):
+        return self.gamma * self.x[4, 0]
+
+    def non_linearity_12(self, t):
+        return -self.gamma * self.x[4, 0]
+
+    def non_linearity_23(self, t):
+        return -self.x[4, 0]
+
+    def non_linearity_32(self, t):
+        return self.x[4, 0]
+
+    def non_linearity_40(self, t):
+        return -self.epsilon * self.x[3, 0]
+
+    def non_linearity_41(self, t):
+        return self.epsilon * self.x[2, 0]
+
+    # def equation_of_state(self, t, x):
+    #
+    #     x1 = x[0, 0]
+    #     x2 = x[1, 0]
+    #     x3 = x[2, 0]
+    #     x4 = x[3, 0]
+    #     x5 = x[4, 0]
+    #
+    #     u_ab = self.clarke_transformation(self.u)
+    #
+    #     u_alpha = u_ab[0, 0]
+    #     u_beta = u_ab[1, 0]
+    #
+    #     # disx = -alpha * isx + beta * psirx + gamma * wm * psiry + delta * usx;
+    #     # disy = -alpha * isy - gamma * wm * psirx + beta * psiry + delta * usy;
+    #     # dpsirx = R_r * (L_h / L_r) * isx - (R_r / L_r) * psirx - p_p * wm * psiry;
+    #     # dpsiry = R_r * (L_h / L_r) * isy + p_p * wm * psirx - (R_r / L_r) * psiry;
+    #     # dwm = -epsilon * psiry * isx + epsilon * psirx * isy - Mz / J;
+    #
+    #     dx1 = -self.alpha * x1 + self.beta * x3 + self.gamma * x5 * x4 + self.delta * u_alpha
+    #     dx2 = -self.alpha * x2 - self.gamma * x5 * x3 + self.beta * x4 + self.delta * u_beta
+    #     dx3 = self.R_r * (self.L_h / self.L_r) * x1 - (self.R_r / self.L_r) * x3 - self.p_p * x5 * x4
+    #     dx4 = self.R_r * (self.L_h / self.L_r) * x2 + self.p_p * x5 * x3 - (self.R_r / self.L_r) * x4
+    #     dx5 = -self.epsilon * x4 * x1 + self.epsilon * x3 * x2 - self.M_z / self.J
+    #
+    #     dx = np.array([[dx1],
+    #                    [dx2],
+    #                    [dx3],
+    #                    [dx4],
+    #                    [dx5]])
+    #
+    #     return dx
+
     def equation_of_state(self, t, x):
 
-        x1 = x[0, 0]
-        x2 = x[1, 0]
-        x3 = x[2, 0]
-        x4 = x[3, 0]
-        x5 = x[4, 0]
-
         u_ab = self.clarke_transformation(self.u)
-        # u_dq = self.park_transformation(u_ab, self.Theta)
 
         u_alpha = u_ab[0, 0]
         u_beta = u_ab[1, 0]
 
-        # u_d = u_dq[0, 0]
-        # u_q = u_dq[1, 0]
-
-        # disx = -alpha * isx + beta * psirx + gamma * wm * psiry + delta * usx;
-        # disy = -alpha * isy - gamma * wm * psirx + beta * psiry + delta * usy;
-        # dpsirx = R_r * (L_h / L_r) * isx - (R_r / L_r) * psirx - p_p * wm * psiry;
-        # dpsiry = R_r * (L_h / L_r) * isy + p_p * wm * psirx - (R_r / L_r) * psiry;
-        # dwm = -epsilon * psiry * isx + epsilon * psirx * isy - Mz / J;
-
-        dx1 = -self.alpha * x1 + self.beta * x3 + self.gamma * x5 * x4 + self.delta * u_alpha
-        dx2 = -self.alpha * x2 - self.gamma * x5 * x3 + self.beta * x4 + self.delta * u_beta
-        dx3 = self.R_r * (self.L_h / self.L_r) * x1 - (self.R_r / self.L_r) * x3 - self.p_p * x5 * x4
-        dx4 = self.R_r * (self.L_h / self.L_r) * x2 + self.p_p * x5 * x3 - (self.R_r / self.L_r) * x4
-        dx5 = -self.epsilon * x4 * x1 + self.epsilon * x3 * x2 - self.M_z / self.J
-
-        # dx1 = -self.alpha * x1 + self.beta * x3 + self.gamma * x5 * x4 + self.delta * u_d
-        # dx2 = -self.alpha * x2 - self.gamma * x5 * x3 + self.beta * x4 + self.delta * u_q
-        # dx3 = self.R_r * (self.L_h / self.L_r) * x1 - (self.R_r / self.L_r) * x3 - self.p_p * x5 * x4
-        # dx4 = self.R_r * (self.L_h / self.L_r) * x2 + self.p_p * x5 * x3 - (self.R_r / self.L_r) * x4
-        # dx5 = -self.epsilon * x4 * x1 + self.epsilon * x3 * x2 - self.M_z / self.J
-
-        dx = np.array([[dx1],
-                       [dx2],
-                       [dx3],
-                       [dx4],
-                       [dx5]])
+        dx = self.A.matrix @ x + self.B @ self.u
 
         return dx
 
