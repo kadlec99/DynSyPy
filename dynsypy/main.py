@@ -128,26 +128,26 @@ source_params = {
 #     "phase": 2 * np.pi / 3
 # }
 
-source_U_params = {
-    "amplitude": U,
-    "frequency": f,
-    "number_of_phases": 1,
-    "phase": 0
-}
-
-source_V_params = {
-    "amplitude": U,
-    "frequency": f,
-    "number_of_phases": 1,
-    "phase": 4 * np.pi / 3
-}
-
-source_W_params = {
-    "amplitude": U,
-    "frequency": f,
-    "number_of_phases": 1,
-    "phase": 2 * np.pi / 3
-}
+# source_U_params = {
+#     "amplitude": U,
+#     "frequency": f,
+#     "number_of_phases": 1,
+#     "phase": 0
+# }
+#
+# source_V_params = {
+#     "amplitude": U,
+#     "frequency": f,
+#     "number_of_phases": 1,
+#     "phase": 4 * np.pi / 3
+# }
+#
+# source_W_params = {
+#     "amplitude": U,
+#     "frequency": f,
+#     "number_of_phases": 1,
+#     "phase": 2 * np.pi / 3
+# }
 
 amplitude = UnitStep(U)
 frequency = UnitStep(f)
@@ -158,9 +158,9 @@ frequency = UnitStep(f)
 
 source = ControlledNPhaseSine(source_params)
 
-phase_U = ControlledNPhaseSine(source_U_params)
-phase_V = ControlledNPhaseSine(source_V_params)
-phase_W = ControlledNPhaseSine(source_W_params)
+# phase_U = ControlledNPhaseSine(source_U_params)
+# phase_V = ControlledNPhaseSine(source_V_params)
+# phase_W = ControlledNPhaseSine(source_W_params)
 
 motor = AsynchronousMachine(motor_params,
                             x0=x0, number_of_inputs=3, dt0=5e-5)
@@ -168,27 +168,29 @@ motor = AsynchronousMachine(motor_params,
 source.connect(amplitude.output, 0)
 source.connect(frequency.output, 1)
 
-phase_U.connect(amplitude.output, 0)
-phase_U.connect(frequency.output, 1)
+# phase_U.connect(amplitude.output, 0)
+# phase_U.connect(frequency.output, 1)
+#
+# phase_V.connect(amplitude.output, 0)
+# phase_V.connect(frequency.output, 1)
+#
+# phase_W.connect(amplitude.output, 0)
+# phase_W.connect(frequency.output, 1)
 
-phase_V.connect(amplitude.output, 0)
-phase_V.connect(frequency.output, 1)
+# motor.connect(phase_U.output, 0)
+# motor.connect(phase_V.output, 1)
+# motor.connect(phase_W.output, 2)
 
-phase_W.connect(amplitude.output, 0)
-phase_W.connect(frequency.output, 1)
-
-motor.connect(phase_U.output, 0)
-motor.connect(phase_V.output, 1)
-motor.connect(phase_W.output, 2)
+motor.connect(source.output, 0)
 
 pool = Pool(0.01, t_end, t0, False)
 
 pool.add(amplitude)
 pool.add(frequency)
-# pool.add(source)
-pool.add(phase_U)
-pool.add(phase_V)
-pool.add(phase_W)
+pool.add(source)
+# pool.add(phase_U)
+# pool.add(phase_V)
+# pool.add(phase_W)
 pool.add(motor)
 
 # t0 = 0

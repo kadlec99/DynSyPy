@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from scipy import signal
 
 import numpy as np
@@ -22,6 +23,9 @@ class System(ABC):
         dt_max: float
         """
         self.sources = [self.null_input]
+        self.source_output_indexes = []
+
+        self.number_of_inputs = number_of_inputs
 
         self.u = np.full((number_of_inputs, 1), self.sources[0](0))
         self.x = np.array(x0)
@@ -51,12 +55,42 @@ class System(ABC):
         self.archive_u = np.append(self.archive_u, self.u, axis=1)
         self.archive_t = np.append(self.archive_t, self.t)
 
-    def connect(self, source, position=0):
+    def connect(self, source, position, source_output_indexes=None):
+        """
+
+        Parameters
+        ----------
+        source : function
+        position : int
+        source_output_indexes : int/List[int]/Tuple[int]/None
+        """
 
         try:
             self.sources[position] = source
         except IndexError:
-            self.sources.append(source)
+            extension_size = ((position + 1) - len(self.sources))
+            extension_list = [self.null_input] * extension_size
+
+            self.sources = self.sources + extension_list
+
+            self.sources[position] = source
+
+        try:
+            self.source_output_indexes[position] = source_output_indexes
+        except IndexError:
+            extension_size = ((position + 1) - len(self.source_output_indexes))
+            extension_list = [None] * extension_size
+
+            self.source_output_indexes = self.source_output_indexes + extension_list
+
+            self.source_output_indexes[position] = source_output_indexes
+
+    # def connect(self, source, position=0):
+    #
+    #     try:
+    #         self.sources[position] = source
+    #     except IndexError:
+    #         self.sources.append(source)
 
     def connect_vector(self, source_vector, position=0):
 
@@ -204,12 +238,40 @@ class System(ABC):
 
     def update_input(self):
 
-        source_t = []
+        source_t = np.zeros([self.number_of_inputs, 1])
 
-        for i in range(len(self.sources)):
-            source_t.append(self.sources[i](self.t))
+        i = 0
 
-        self.u = np.transpose(np.array([source_t]))
+        for j in range(0, len(self.sources)):
+            aux = self.sources[j](self.t)
+
+            if i >= self.number_of_inputs:
+                raise ValueError('Too many source outputs.')
+
+            match aux:
+                case int() | float() as aux:
+                    source_t[i][0] = aux
+                    i += 1
+                case np.ndarray() as aux:
+                    if self.source_output_indexes[j] is None:
+                        for value in aux:
+                            source_t[i][0] = value
+                            i += 1
+                    else:
+                        for index in self.source_output_indexes[j]:
+                            source_t[i][0] = aux[index]
+                            i += 1
+                case _:
+                    raise ValueError('Wrong input data type.')
+
+        self.u = source_t
+
+        # source_t = []
+        #
+        # for i in range(len(self.sources)):
+        #     source_t.append(self.sources[i](self.t))
+        #
+        # self.u = np.transpose(np.array([source_t]))
 
     def equation_of_state(self, t, x):
         """
@@ -457,11 +519,11 @@ class System(ABC):
     #             break
 
     def select_output(self, index):
-        self.output_index = index
-
         if self.output_index >= self.number_of_outputs:
             raise ValueError('Out of range of output list!!!'
                              f' The number of outputs of this system is {self.number_of_outputs}.')
+
+        self.output_index = index
 
     @abstractmethod
     def update_output(self):
@@ -470,31 +532,62 @@ class System(ABC):
 
     def output(self, t):
 
-        for i in range(self.last_used_archive_index, len(self.archive_t)):
+        index = np.searchsorted(self.archive_t, t)
 
-            if self.archive_t[i] == t:
-                self.last_used_archive_index = i
-                return self.archive_y[self.output_index][i]
+        if self.archive_t[index] == t:
+            self.last_used_archive_index = index
+            return self.archive_y[:, self.last_used_archive_index]
+        elif self.archive_t[index] > t:
+            self.last_used_archive_index = index - 1
+            return self.linear_regression(t, index)
+        else:
+            self.last_used_archive_index = index - 2
+            return self.linear_regression(t, index - 1)
 
-            if self.archive_t[i] > t:
-                self.last_used_archive_index = i - 1
-                return self.linear_regression(t, i)
-
-        self.last_used_archive_index = len(self.archive_t) - 2
-        return self.linear_regression(t, len(self.archive_t) - 1)
+        # for i in range(self.last_used_archive_index, len(self.archive_t)):
+        #
+        #     if self.archive_t[i] == t:
+        #         self.last_used_archive_index = i
+        #         return self.archive_y[self.output_index][i]
+        #
+        #     if self.archive_t[i] > t:
+        #         self.last_used_archive_index = i - 1
+        #         return self.linear_regression(t, i)
+        #
+        # self.last_used_archive_index = len(self.archive_t) - 2
+        # return self.linear_regression(t, len(self.archive_t) - 1)
 
     def linear_regression(self, t, i):
+
+        output_vector = np.zeros(self.number_of_outputs)
+
         system_matrix = np.array([[self.archive_t[i - 1], 1],
                                   [self.archive_t[i], 1]])
 
-        vector_of_right_sides = np.array([[self.archive_y[self.output_index][i - 1]],
-                                          [self.archive_y[self.output_index][i]]])
+        for output_index in range(0, self.number_of_outputs):
 
-        vector_x = np.linalg.inv(system_matrix) @ vector_of_right_sides
+            vector_of_right_sides = np.array([[self.archive_y[output_index][i - 1]],
+                                              [self.archive_y[output_index][i]]])
 
-        y = vector_x[0] * t + vector_x[1]
+            vector_x = np.linalg.inv(system_matrix) @ vector_of_right_sides
 
-        return y[0]
+            y = vector_x[0] * t + vector_x[1]
+
+            output_vector[output_index] = y[0]
+
+        return output_vector
+
+        # system_matrix = np.array([[self.archive_t[i - 1], 1],
+        #                           [self.archive_t[i], 1]])
+        #
+        # vector_of_right_sides = np.array([[self.archive_y[self.output_index][i - 1]],
+        #                                   [self.archive_y[self.output_index][i]]])
+        #
+        # vector_x = np.linalg.inv(system_matrix) @ vector_of_right_sides
+        #
+        # y = vector_x[0] * t + vector_x[1]
+        #
+        # return y[0]
 
     @staticmethod
     def null_input(t):
@@ -871,12 +964,12 @@ class PartiallyNonlinearSystem(System, ABC):
 # ----------------------------------------------------------------------------
 
 
-def f1(x):
-    return x
-
-
-def f2(x):
-    return x ** 2
+# def f1(x):
+#     return x
+#
+#
+# def f2(x):
+#     return x ** 2
 
 
 class Matrix:
