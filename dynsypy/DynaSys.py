@@ -534,15 +534,19 @@ class System(ABC):
 
         index = np.searchsorted(self.archive_t, t)
 
-        if self.archive_t[index] == t:
-            self.last_used_archive_index = index
-            return self.archive_y[:, self.last_used_archive_index]
-        elif self.archive_t[index] > t:
-            self.last_used_archive_index = index - 1
-            return self.linear_regression(t, index)
-        else:
+        if index >= len(self.archive_t):
             self.last_used_archive_index = index - 2
             return self.linear_regression(t, index - 1)
+        else:
+            if self.archive_t[index] == t:
+                self.last_used_archive_index = index
+                return self.archive_y[:, self.last_used_archive_index]
+            elif self.archive_t[index] > t:
+                self.last_used_archive_index = index - 1
+                return self.linear_regression(t, index)
+            else:
+                self.last_used_archive_index = index - 2
+                return self.linear_regression(t, index - 1)
 
         # for i in range(self.last_used_archive_index, len(self.archive_t)):
         #
@@ -979,10 +983,10 @@ class Matrix:
         self.functions = non_linearity_functions    # [f1, f2]
         self.indexes = non_linearity_indexes        # [[0, 0], [1, 1]]
 
-    def eval(self, t):
+    def eval(self, x):
         i = 0
         for index in self.indexes:
-            self.matrix[index[0], index[1]] = self.functions[i](t)
+            self.matrix[index[0], index[1]] = self.functions[i](x)
             i += 1
 
 

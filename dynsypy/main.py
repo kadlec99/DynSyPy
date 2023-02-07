@@ -5,7 +5,7 @@ from dynsypy import *
 
 
 # TODO: alokace pameti pred vypoctem
-# TODO: N-fazovy zdroj rizeny - nova metoda connectVector()
+# TODO: N-fazovy zdroj rizeny
 # TODO: rovnice motoru v maticovem tvaru => nova trida Matrix,
 #  NonlinearSystem + potomek uvazujici maticovy popis (kvazinelinearni, ...)
 # TODO: rovnice v dq
@@ -152,21 +152,23 @@ source_params = {
 amplitude = UnitStep(U)
 frequency = UnitStep(f)
 
+load_torque = UnitStep(0)
+
 # phase_U = Sine(source_U_params)
 # phase_V = Sine(source_V_params)
 # phase_W = Sine(source_W_params)
 
-source = ControlledNPhaseSine(source_params)
+source_3_f = ControlledNPhaseSine(source_params)
 
 # phase_U = ControlledNPhaseSine(source_U_params)
 # phase_V = ControlledNPhaseSine(source_V_params)
 # phase_W = ControlledNPhaseSine(source_W_params)
 
 motor = AsynchronousMachine(motor_params,
-                            x0=x0, number_of_inputs=3, dt0=5e-5)
+                            x0=x0, number_of_inputs=4, dt0=5e-5)
 
-source.connect(amplitude.output, 0)
-source.connect(frequency.output, 1)
+source_3_f.connect(amplitude.output, 0)
+source_3_f.connect(frequency.output, 1)
 
 # phase_U.connect(amplitude.output, 0)
 # phase_U.connect(frequency.output, 1)
@@ -181,13 +183,15 @@ source.connect(frequency.output, 1)
 # motor.connect(phase_V.output, 1)
 # motor.connect(phase_W.output, 2)
 
-motor.connect(source.output, 0)
+motor.connect(source_3_f.output, 0)
+motor.connect(load_torque.output, 1)
 
-pool = Pool(0.01, t_end, t0, False)
+pool = Pool(0.01, t_end, t0, True)
 
 pool.add(amplitude)
 pool.add(frequency)
-pool.add(source)
+pool.add(source_3_f)
+pool.add(load_torque)
 # pool.add(phase_U)
 # pool.add(phase_V)
 # pool.add(phase_W)
