@@ -51,7 +51,8 @@ class AsynchronousMachine(Machine):
     def __init__(self, parameters, dt0=1.5e-5, t0=0, x0=0,
                  number_of_inputs=4, allowed_error=1e-6, dt_max=1e-2):
 
-        number_of_outputs = np.size(x0)
+        # number_of_outputs = np.size(x0)
+        number_of_outputs = 4
 
         super().__init__(dt0, t0, x0,
                          number_of_inputs, number_of_outputs,
@@ -183,4 +184,7 @@ class AsynchronousMachine(Machine):
 
         # self.y = np.array([[1, 0, 0, 0, 0]]) @ self.x
 
-        self.y = np.eye(5) @ self.x
+        # self.y = np.eye(5) @ self.x
+
+        self.y = np.vstack(
+            (self.clarke_transformation(self.x[0:2, :], reverse=True), self.x[-1, :]))

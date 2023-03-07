@@ -5,7 +5,6 @@ from dynsypy import *
 
 
 # TODO: alokace pameti pred vypoctem
-# TODO: N-fazovy zdroj rizeny
 # TODO: rovnice motoru v maticovem tvaru => nova trida Matrix,
 #  NonlinearSystem + potomek uvazujici maticovy popis (kvazinelinearni, ...)
 # TODO: rovnice v dq
@@ -367,15 +366,23 @@ pool.simulate()
 #          motor.archive_t, motor.archive_u[1, :],
 #          motor.archive_t, motor.archive_u[2, :])
 
-fig, axs = plt.subplots(3)
+# fig, axs = plt.subplots(3)
+# axs[0].plot(motor.archive_t, motor.archive_y[0, :],
+#             motor.archive_t, motor.archive_y[1, :])
+# axs[0].grid()
+# axs[1].plot(motor.archive_t, motor.archive_y[2, :],
+#             motor.archive_t, motor.archive_y[3, :])
+# axs[1].grid()
+# axs[2].plot(motor.archive_t, motor.archive_y[4, :])
+# axs[2].grid()
+
+fig, axs = plt.subplots(2)
 axs[0].plot(motor.archive_t, motor.archive_y[0, :],
-            motor.archive_t, motor.archive_y[1, :])
+            motor.archive_t, motor.archive_y[1, :],
+            motor.archive_t, motor.archive_y[2, :])
 axs[0].grid()
-axs[1].plot(motor.archive_t, motor.archive_y[2, :],
-            motor.archive_t, motor.archive_y[3, :])
+axs[1].plot(motor.archive_t, motor.archive_y[3, :])
 axs[1].grid()
-axs[2].plot(motor.archive_t, motor.archive_y[4, :])
-axs[2].grid()
 
 # plt.plot(motor.archive_t, motor.archive_x[0, :],
 #          motor.archive_t, motor.archive_x[1, :])
