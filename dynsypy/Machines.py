@@ -1,5 +1,5 @@
 from abc import ABC     # , abstractmethod
-from DynaSys import PartiallyNonlinearSystem, Matrix
+from DynaSys import System, PartiallyNonlinearSystem, Matrix
 
 import numpy as np
 
@@ -23,10 +23,15 @@ class Machine(PartiallyNonlinearSystem, ABC):
 
     def clarke_transformation(self, signal_3_phase, reverse=False):
 
+        # if not reverse:
+        #     return 2 / 3 * self.C_p @ signal_3_phase
+        # else:
+        #     return 2 / 3 * self.C_p_inv @ signal_3_phase
+
         if not reverse:
-            return 2 / 3 * self.C_p @ signal_3_phase
+            return self.C_p @ signal_3_phase
         else:
-            return 2 / 3 * self.C_p_inv @ signal_3_phase
+            return self.C_p_inv @ signal_3_phase
 
     @staticmethod
     def park_transformation(signal_alpha_beta, theta, reverse=False):
@@ -65,7 +70,7 @@ class AsynchronousMachine(Machine):
         self.L_h = parameters["L_h"]    # 134.4e-3
         self.p_p = parameters["p_p"]    # 2
         self.N_n = parameters["N_n"]    # 1420
-        self.U_n = parameters["U_n"]    # 150  # 380    # 3x380
+        self.U_s_n = parameters["U_s_n"]    # 150  # 380    # 3x380
         self.f_s_n = parameters["f_s_n"]    # 50
         self.I_s_n = parameters["I_s_n"]    # 8.5
         self.J = parameters["J"]        # 0.03
@@ -188,3 +193,33 @@ class AsynchronousMachine(Machine):
 
         self.y = np.vstack(
             (self.clarke_transformation(self.x[0:2, :], reverse=True), self.x[-1, :]))
+
+
+# ----------------------------------------------------------------------------
+
+
+class ASMScalarControl(System):
+
+    def __init__(self, parameters, dt0=1.5e-5, t0=0, x0=0,
+                 number_of_inputs=2, number_of_outputs=2,
+                 allowed_error=1e-6, dt_max=1e-2):
+
+        super().__init__(dt0, t0, x0,
+                         number_of_inputs, number_of_outputs,
+                         allowed_error, dt_max)
+
+        self.K_U = (parameters["U_s_n"] * np.sqrt(2)) / parameters["f_s_n"]
+        self.K_f_r =\
+            (parameters["U_s_n"] * np.sqrt(2) * parameters["R_s"]) / (parameters["f_s_n"] * parameters["R_r"])
+
+        self.rad_to_deg = 1 / (2 * np.pi)
+        self.mech_rad_to_el_deg = parameters["p_p"] / (2 * np.pi)
+
+    def equation_of_state(self, t, x):
+        pass
+
+    def update_output(self):
+        pass
+
+    def output(self, t):
+        pass

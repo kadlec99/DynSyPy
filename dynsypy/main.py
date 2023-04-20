@@ -74,7 +74,7 @@ def plotter_log_axis(freq_array, val_array):
 
 t0 = 0
 # dt0 = 1.5e-5
-t_end = 0.5
+t_end = 0.3
 
 x0 = np.array([[0.0],
                [0.0],
@@ -93,7 +93,7 @@ motor_params = {
     "L_h": 134.4e-3,
     "p_p": 2,
     "N_n": 1420,
-    "U_n": 150,  # 380    # 3x380
+    "U_s_n": 380,   # 3x380
     "f_s_n": 50,
     "I_s_n": 8.5,
     "J": 0.03,
