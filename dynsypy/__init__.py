@@ -1,13 +1,11 @@
-from .DynaSys import System, LinearSystem
+from .DynaSys import LinearSystem, Matrix
 from .Pool import Pool
-from .Machines import AsynchronousMachine
-from .Sources import Source, UncontrolledSource, ControlledSource,\
-    HarmonicFunctions, Sine, Cosine, UnitStep,\
+from .Machines import AsynchronousMachine, ASMScalarControl, PIController
+from .Sources import Sine, Cosine, UnitStep,\
     ControlledSine, ControlledNPhaseSine
 
-__all__ = ['System', 'LinearSystem',
+__all__ = ['LinearSystem', 'Matrix',
            'Pool',
-           'AsynchronousMachine',
-           'Source', 'UncontrolledSource', 'ControlledSource',
-           'HarmonicFunctions', 'Sine', 'Cosine', 'UnitStep',
+           'AsynchronousMachine', 'ASMScalarControl', 'PIController',
+           'Sine', 'Cosine', 'UnitStep',
            'ControlledSine', 'ControlledNPhaseSine']

@@ -169,18 +169,20 @@ class Cosine(HarmonicFunctions):
 
 class UnitStep(UncontrolledSource):
 
-    def __init__(self, parameter=1, dt0=1.5e-5, t0=0):
+    def __init__(self, final_value=1, initial_value=0.0, step_time=0, dt0=1.5e-5, t0=0):
 
         super().__init__(1, dt0, t0)
 
-        self.parameter = parameter
+        self.step_time = step_time
+        self.initial_value = initial_value
+        self.final_value = final_value
 
     def source_function(self, t):
 
-        if t >= self.t0:
-            return self.parameter
+        if t >= self.step_time:
+            return self.final_value
         else:
-            return 0.0
+            return self.initial_value
 
 
 # ----------------------------------------------------------------------------

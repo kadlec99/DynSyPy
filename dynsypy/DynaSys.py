@@ -62,7 +62,7 @@ class System(ABC):
         ----------
         source : function
         position : int
-        source_output_indexes : int/List[int]/Tuple[int]/None
+        source_output_indexes : List[int]/Tuple[int]/None
         """
 
         try:
@@ -535,18 +535,18 @@ class System(ABC):
         index = np.searchsorted(self.archive_t, t)
 
         if index >= len(self.archive_t):
-            self.last_used_archive_index = index - 2
-            return self.linear_regression(t, index - 1)
+            self.last_used_archive_index = len(self.archive_t) - 2
+            return self.output_linear_regression(t, len(self.archive_t) - 1)
         else:
             if self.archive_t[index] == t:
                 self.last_used_archive_index = index
                 return self.archive_y[:, self.last_used_archive_index]
             elif self.archive_t[index] > t:
                 self.last_used_archive_index = index - 1
-                return self.linear_regression(t, index)
+                return self.output_linear_regression(t, index)
             else:
                 self.last_used_archive_index = index - 2
-                return self.linear_regression(t, index - 1)
+                return self.output_linear_regression(t, index - 1)
 
         # for i in range(self.last_used_archive_index, len(self.archive_t)):
         #
@@ -561,25 +561,59 @@ class System(ABC):
         # self.last_used_archive_index = len(self.archive_t) - 2
         # return self.linear_regression(t, len(self.archive_t) - 1)
 
-    def linear_regression(self, t, i):
+    def linear_regression(self, t, i, data, number_of_items):
 
-        output_vector = np.zeros(self.number_of_outputs)
+        result_vector = np.zeros(number_of_items)
 
         system_matrix = np.array([[self.archive_t[i - 1], 1],
                                   [self.archive_t[i], 1]])
 
-        for output_index in range(0, self.number_of_outputs):
+        for result_index in range(0, number_of_items):
 
-            vector_of_right_sides = np.array([[self.archive_y[output_index][i - 1]],
-                                              [self.archive_y[output_index][i]]])
+            vector_of_right_sides = np.array([[data[result_index][i - 1]],
+                                              [data[result_index][i]]])
 
             vector_x = np.linalg.inv(system_matrix) @ vector_of_right_sides
 
             y = vector_x[0] * t + vector_x[1]
 
-            output_vector[output_index] = y[0]
+            result_vector[result_index] = y[0]
 
-        return output_vector
+        return result_vector
+
+        # system_matrix = np.array([[self.archive_t[i - 1], 1],
+        #                           [self.archive_t[i], 1]])
+        #
+        # vector_of_right_sides = np.array([[self.archive_y[self.result_index][i - 1]],
+        #                                   [self.archive_y[self.result_index][i]]])
+        #
+        # vector_x = np.linalg.inv(system_matrix) @ vector_of_right_sides
+        #
+        # y = vector_x[0] * t + vector_x[1]
+        #
+        # return y[0]
+
+    def output_linear_regression(self, t, i):
+
+        return self.linear_regression(t, i, self.archive_y, self.number_of_outputs)
+
+        # output_vector = np.zeros(self.number_of_outputs)
+        #
+        # system_matrix = np.array([[self.archive_t[i - 1], 1],
+        #                           [self.archive_t[i], 1]])
+        #
+        # for output_index in range(0, self.number_of_outputs):
+        #
+        #     vector_of_right_sides = np.array([[self.archive_y[output_index][i - 1]],
+        #                                       [self.archive_y[output_index][i]]])
+        #
+        #     vector_x = np.linalg.inv(system_matrix) @ vector_of_right_sides
+        #
+        #     y = vector_x[0] * t + vector_x[1]
+        #
+        #     output_vector[output_index] = y[0]
+        #
+        # return output_vector
 
         # system_matrix = np.array([[self.archive_t[i - 1], 1],
         #                           [self.archive_t[i], 1]])
@@ -592,6 +626,40 @@ class System(ABC):
         # y = vector_x[0] * t + vector_x[1]
         #
         # return y[0]
+
+    def input_linear_regression(self, t, i):
+
+        return self.linear_regression(t, i, self.archive_u, self.number_of_inputs)
+
+        # input_vector = np.zeros(self.number_of_inputs)
+        #
+        # system_matrix = np.array([[self.archive_t[i - 1], 1],
+        #                           [self.archive_t[i], 1]])
+        #
+        # for input_index in range(0, self.number_of_inputs):
+        #
+        #     vector_of_right_sides = np.array([[self.archive_u[input_index][i - 1]],
+        #                                       [self.archive_u[input_index][i]]])
+        #
+        #     vector_x = np.linalg.inv(system_matrix) @ vector_of_right_sides
+        #
+        #     u = vector_x[0] * t + vector_x[1]
+        #
+        #     input_vector[input_index] = u[0]
+        #
+        # return input_vector
+
+        # system_matrix = np.array([[self.archive_t[i - 1], 1],
+        #                           [self.archive_t[i], 1]])
+        #
+        # vector_of_right_sides = np.array([[self.archive_u[self.input_index][i - 1]],
+        #                                   [self.archive_u[self.input_index][i]]])
+        #
+        # vector_x = np.linalg.inv(system_matrix) @ vector_of_right_sides
+        #
+        # u = vector_x[0] * t + vector_x[1]
+        #
+        # return u[0]
 
     @staticmethod
     def null_input(t):

@@ -109,6 +109,12 @@ source_params = {
     "phase": 0
 }
 
+PI_controller_params = {
+    "K": 2/3,
+    "T_i": 0.05,
+    "saturation_value": 2 * np.pi * 5
+}
+
 # source_U_params = {
 #     "amplitude": U,
 #     "frequency": f,
@@ -148,10 +154,14 @@ source_params = {
 #     "phase": 2 * np.pi / 3
 # }
 
-amplitude = UnitStep(U)
-frequency = UnitStep(f)
+# amplitude = UnitStep(U)
+# frequency = UnitStep(f)
 
-load_torque = UnitStep(0)
+required_speed = UnitStep(2 * np.pi * 10, 2 * np.pi * 20, 0.5)
+load_torque = UnitStep(70, 25, 0.3)
+
+controller = PIController(PI_controller_params)
+scalar_control = ASMScalarControl(motor_params)
 
 # phase_U = Sine(source_U_params)
 # phase_V = Sine(source_V_params)
@@ -166,8 +176,16 @@ source_3_f = ControlledNPhaseSine(source_params)
 motor = AsynchronousMachine(motor_params,
                             x0=x0, number_of_inputs=4, dt0=5e-5)
 
-source_3_f.connect(amplitude.output, 0)
-source_3_f.connect(frequency.output, 1)
+controller.connect(required_speed.output, 0)
+controller.connect(motor.output, 1, [3])
+
+scalar_control.connect(controller.output, 0)
+scalar_control.connect(motor.output, 1, [3])
+
+source_3_f.connect(scalar_control.output, 0)
+
+# source_3_f.connect(amplitude.output, 0)
+# source_3_f.connect(frequency.output, 1)
 
 # phase_U.connect(amplitude.output, 0)
 # phase_U.connect(frequency.output, 1)
@@ -185,15 +203,18 @@ source_3_f.connect(frequency.output, 1)
 motor.connect(source_3_f.output, 0)
 motor.connect(load_torque.output, 1)
 
-pool = Pool(0.01, t_end, t0, True)
+pool = Pool(1e-4, t_end, t0, False)
 
-pool.add(amplitude)
-pool.add(frequency)
-pool.add(source_3_f)
+# pool.add(amplitude)
+# pool.add(frequency)
+pool.add(required_speed)
 pool.add(load_torque)
+pool.add(controller)
+pool.add(scalar_control)
 # pool.add(phase_U)
 # pool.add(phase_V)
 # pool.add(phase_W)
+pool.add(source_3_f)
 pool.add(motor)
 
 # t0 = 0
