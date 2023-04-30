@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from DynaSys import System
+from DynaSys import NonDynamicSystem
 
 import numpy as np
 
 
-class Source(System, ABC):
+class Source(NonDynamicSystem, ABC):
 
     def __init__(self, number_of_inputs, number_of_outputs,
                  dt0=1.5e-5, t0=0, x0=0):
@@ -23,24 +23,6 @@ class Source(System, ABC):
                          number_of_inputs=number_of_inputs,
                          number_of_outputs=number_of_outputs,
                          allowed_error=1e-6, dt_max=1e-2)
-
-    def step(self, end_of_pool_step):
-
-        while self.t < end_of_pool_step:
-            self.t = self.t + self.dt
-
-            if self.t > end_of_pool_step:
-                self.t = end_of_pool_step
-
-            self.update_input()
-            self.update_state()
-            self.update_output()
-
-            self.data_archiving()
-
-    def adaptive_step(self, end_of_pool_step):
-
-        self.step(end_of_pool_step)
 
     def update_state(self):
 
@@ -237,7 +219,7 @@ class ControlledNPhaseSine(ControlledSource):
         self.phase = 0
         self.beta = 0
 
-        self.x0 = 0
+        self.x0 = np.zeros([self.number_of_phases, 1])
 
         self.source_initialize(parameters["phase"], t0)
 

@@ -74,7 +74,7 @@ def plotter_log_axis(freq_array, val_array):
 
 t0 = 0
 # dt0 = 1.5e-5
-t_end = 0.3
+t_end = 1
 
 x0 = np.array([[0.0],
                [0.0],
@@ -154,11 +154,12 @@ PI_controller_params = {
 #     "phase": 2 * np.pi / 3
 # }
 
-# amplitude = UnitStep(U)
-# frequency = UnitStep(f)
+# amplitude = UnitStep(final_value=U, initial_value=0.0, step_time=0)
+# frequency = UnitStep(final_value=f, initial_value=0.0, step_time=0)
 
-required_speed = UnitStep(2 * np.pi * 10, 2 * np.pi * 20, 0.5)
-load_torque = UnitStep(70, 25, 0.3)
+required_speed = UnitStep(final_value=2 * np.pi * 10, initial_value=2 * np.pi * 20, step_time=0.5)
+load_torque = UnitStep(final_value=70, initial_value=25, step_time=0.3)
+# load_torque = UnitStep(final_value=0, initial_value=0.0, step_time=0)
 
 controller = PIController(PI_controller_params)
 scalar_control = ASMScalarControl(motor_params)
@@ -203,18 +204,23 @@ source_3_f.connect(scalar_control.output, 0)
 motor.connect(source_3_f.output, 0)
 motor.connect(load_torque.output, 1)
 
-pool = Pool(1e-4, t_end, t0, False)
+# pool = Pool(1e-4, t_end, t0, True)
+pool = Pool(0.7e-4, t_end, t0, False)
 
 # pool.add(amplitude)
 # pool.add(frequency)
 pool.add(required_speed)
+
 pool.add(load_torque)
 pool.add(controller)
 pool.add(scalar_control)
+
+pool.add(source_3_f)
+
 # pool.add(phase_U)
 # pool.add(phase_V)
 # pool.add(phase_W)
-pool.add(source_3_f)
+
 pool.add(motor)
 
 # t0 = 0
@@ -402,8 +408,19 @@ axs[0].plot(motor.archive_t, motor.archive_y[0, :],
             motor.archive_t, motor.archive_y[1, :],
             motor.archive_t, motor.archive_y[2, :])
 axs[0].grid()
-axs[1].plot(motor.archive_t, motor.archive_y[3, :])
+axs[1].plot(motor.archive_t, motor.archive_y[3, :],
+            required_speed.archive_t, required_speed.archive_y)
 axs[1].grid()
+
+# fig, axs = plt.subplots(3)
+# axs[0].plot(motor.archive_t, motor.archive_x[0, :],
+#             motor.archive_t, motor.archive_x[1, :])
+# axs[0].grid()
+# axs[1].plot(motor.archive_t, motor.archive_x[2, :],
+#             motor.archive_t, motor.archive_x[3, :])
+# axs[1].grid()
+# axs[2].plot(motor.archive_t, motor.archive_x[-1, :])
+# axs[2].grid()
 
 # plt.plot(motor.archive_t, motor.archive_x[0, :],
 #          motor.archive_t, motor.archive_x[1, :])

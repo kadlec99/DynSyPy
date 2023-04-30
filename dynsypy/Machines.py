@@ -1,10 +1,10 @@
 from abc import ABC     # , abstractmethod
-from DynaSys import System, PartiallyNonlinearSystem, Matrix
+from DynaSys import StaticSystem, PartiallyNonLinearSystem, Matrix
 
 import numpy as np
 
 
-class Machine(PartiallyNonlinearSystem, ABC):
+class Machine(PartiallyNonLinearSystem, ABC):
 
     def __init__(self, dt0=1.5e-5, t0=0, x0=0,
                  number_of_inputs=3, number_of_outputs=1,
@@ -84,7 +84,7 @@ class AsynchronousMachine(Machine):
 
         self.alpha = (self.R_s + self.R_r * ((self.L_h ** 2) / (self.L_r ** 2))) / lmb
         self.beta = (self.R_r * (self.L_h / (self.L_r ** 2))) / lmb
-        self.gamma = ((self.L_h / self.L_r) / lmb) * self.p_p
+        self.gamma = (self.p_p * (self.L_h / self.L_r)) / lmb
         self.delta = 1 / lmb
         self.epsilon = ((self.k_p * self.p_p) / self.J) * (self.L_h / self.L_r)
 
@@ -199,9 +199,9 @@ class AsynchronousMachine(Machine):
 # ----------------------------------------------------------------------------
 
 
-class ASMScalarControl(System):
+class ASMScalarControl(StaticSystem):
 
-    def __init__(self, parameters, dt0=1.5e-5, t0=0, x0=0,
+    def __init__(self, parameters, dt0=1.5e-5, t0=0, x0=np.zeros([2, 1]),
                  number_of_inputs=2, number_of_outputs=2,
                  allowed_error=1e-6, dt_max=1e-2):
 
@@ -251,7 +251,7 @@ class ASMScalarControl(System):
         else:
             if self.archive_t[index] == t:
                 self.last_used_archive_index = index
-                return self.system_function(self.archive_u[:, self.last_used_archive_index])
+                return self.system_function(self.archive_u[:, [self.last_used_archive_index]])
             elif self.archive_t[index] > t:
                 self.last_used_archive_index = index - 1
                 return self.system_function(self.input_linear_regression(t, index))
@@ -263,7 +263,7 @@ class ASMScalarControl(System):
 # ----------------------------------------------------------------------------
 
 
-class PIController(System):
+class PIController(StaticSystem):
 
     def __init__(self, parameters, dt0=1.5e-5, t0=0, x0=np.zeros([3, 1]),
                  number_of_inputs=2, number_of_outputs=1,
@@ -278,6 +278,8 @@ class PIController(System):
         self.T_r = 0.5 * parameters["T_i"]
 
         self.saturation_value = parameters["saturation_value"]
+
+        self.output_matrix = np.array([[0, 0, 1]])
 
     def update_state(self):
 
@@ -309,7 +311,7 @@ class PIController(System):
 
     def update_output(self):
 
-        self.y = np.array([[0, 0, 1]]) @ self.x
+        self.y = self.output_matrix @ self.x
 
     def output(self, t):
 
@@ -317,22 +319,26 @@ class PIController(System):
 
         if index >= len(self.archive_t):
             self.last_used_archive_index = len(self.archive_t) - 2
-            return self.system_function(self.input_linear_regression(t, len(self.archive_t) - 1),
-                                        self.archive_x[:, -1],
-                                        self.archive_t[-1] - t)
+            return self.output_matrix @ self.system_function(
+                self.input_linear_regression(t, len(self.archive_t) - 1),
+                self.archive_x[:, [-1]],
+                self.archive_t[-1] - t)
         else:
             if self.archive_t[index] == t:
                 self.last_used_archive_index = index
-                return self.system_function(self.archive_u[:, self.last_used_archive_index],
-                                            self.archive_x[:, index - 1],
-                                            self.archive_t[index] - self.archive_t[index - 1])
+                return self.output_matrix @ self.system_function(
+                    self.archive_u[:, [self.last_used_archive_index]],
+                    self.archive_x[:, [index - 1]],
+                    self.archive_t[index] - self.archive_t[index - 1])
             elif self.archive_t[index] > t:
                 self.last_used_archive_index = index - 1
-                return self.system_function(self.input_linear_regression(t, index),
-                                            self.archive_x[:, index - 1],
-                                            self.archive_t[index - 1] - t)
+                return self.output_matrix @ self.system_function(
+                    self.input_linear_regression(t, index),
+                    self.archive_x[:, [index - 1]],
+                    self.archive_t[index - 1] - t)
             else:
                 self.last_used_archive_index = index - 2
-                return self.system_function(self.input_linear_regression(t, index - 1),
-                                            self.archive_x[:, index - 1],
-                                            self.archive_t[index - 1] - t)
+                return self.output_matrix @ self.system_function(
+                    self.input_linear_regression(t, index - 1),
+                    self.archive_x[:, [index - 1]],
+                    self.archive_t[index - 1] - t)

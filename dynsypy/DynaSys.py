@@ -33,13 +33,14 @@ class System(ABC):
 
         self.t0 = t0
         self.t = self.t0
+        self.dt0 = dt0
         self.dt = dt0
         self.dt_max = dt_max
 
         self.archive_u = np.array(self.u)
         self.archive_x = np.array(self.x)
         self.archive_y = np.array(self.y)
-        self.archive_t = np.array(self.t)
+        self.archive_t = np.array([self.t])
 
         self.number_of_outputs = number_of_outputs
         self.output_index = 0
@@ -53,7 +54,7 @@ class System(ABC):
         self.archive_x = np.append(self.archive_x, self.x, axis=1)
         self.archive_y = np.append(self.archive_y, self.y, axis=1)
         self.archive_u = np.append(self.archive_u, self.u, axis=1)
-        self.archive_t = np.append(self.archive_t, self.t)
+        self.archive_t = np.append(self.archive_t, [self.t])
 
     def connect(self, source, position, source_output_indexes=None):
         """
@@ -102,19 +103,29 @@ class System(ABC):
 
     def step(self, end_of_pool_step):
 
-        while self.t < end_of_pool_step:
-            self.t = self.t + self.dt
+        pass
 
-            if self.t > end_of_pool_step:
-                self.t = end_of_pool_step
-
-            self.update_input()
-            self.runge_kutta_step()
-            # self.runge_kutta_45_step()
-            # self.runge_kutta_fehlberg_step(end_of_pool_step)
-            self.update_output()
-
-            self.data_archiving()
+        # while self.t < end_of_pool_step:
+        #
+        #     if self.t + self.dt > end_of_pool_step:
+        #         self.dt = end_of_pool_step - self.t
+        #
+        #     self.t = self.t + self.dt
+        #
+        #     # if self.t > end_of_pool_step:
+        #     #     self.dt = self.t - end_of_pool_step
+        #     #     self.t = end_of_pool_step
+        #
+        #     self.update_input()
+        #     self.runge_kutta_step()
+        #     # self.runge_kutta_45_step()
+        #     # self.runge_kutta_fehlberg_step(end_of_pool_step)
+        #     self.update_output()
+        #
+        #     if self.dt != self.dt0:
+        #         self.dt = self.dt0
+        #
+        #     self.data_archiving()
 
     def runge_kutta_step(self):
         """integration"""
@@ -181,16 +192,21 @@ class System(ABC):
 
         while self.t < end_of_pool_step:
 
+            # Adjust step size when we get to last interval
+
+            if self.t + h > end_of_pool_step:
+                h = end_of_pool_step - self.t
+
             self.t = self.t + h
 
             self.update_input()
 
             self.t = self.t - h
 
-            # Adjust step size when we get to last interval
-
-            if self.t + h > end_of_pool_step:
-                h = end_of_pool_step - self.t
+            # # Adjust step size when we get to last interval
+            #
+            # if self.t + h > end_of_pool_step:
+            #     h = end_of_pool_step - self.t
 
             # Compute values needed to compute truncation error estimate and
             # the 4th order RK estimate.
@@ -530,23 +546,70 @@ class System(ABC):
 
         pass
 
+    # def output(self, t):
+    #
+    #     index = np.searchsorted(self.archive_t, t)
+    #
+    #     if index >= len(self.archive_t):
+    #         self.last_used_archive_index = index - 2
+    #         return self.linear_regression(t, index - 1)
+    #     else:
+    #         if self.archive_t[index] == t:
+    #             self.last_used_archive_index = index
+    #             return self.archive_y[:, self.last_used_archive_index]
+    #         elif self.archive_t[index] > t:
+    #             self.last_used_archive_index = index - 1
+    #             return self.linear_regression(t, index)
+    #         else:
+    #             self.last_used_archive_index = index - 2
+    #             return self.linear_regression(t, index - 1)
+    #
+    #     # for i in range(self.last_used_archive_index, len(self.archive_t)):
+    #     #
+    #     #     if self.archive_t[i] == t:
+    #     #         self.last_used_archive_index = i
+    #     #         return self.archive_y[self.output_index][i]
+    #     #
+    #     #     if self.archive_t[i] > t:
+    #     #         self.last_used_archive_index = i - 1
+    #     #         return self.linear_regression(t, i)
+    #     #
+    #     # self.last_used_archive_index = len(self.archive_t) - 2
+    #     # return self.linear_regression(t, len(self.archive_t) - 1)
+
     def output(self, t):
+        """
 
-        index = np.searchsorted(self.archive_t, t)
+        Parameters
+        ----------
+        t: float
 
-        if index >= len(self.archive_t):
-            self.last_used_archive_index = len(self.archive_t) - 2
-            return self.output_linear_regression(t, len(self.archive_t) - 1)
+        Returns
+        -------
+        numpy.ndarray/float
+        """
+
+        if np.shape(self.archive_t)[0] == 1:
+
+            return self.archive_y[:, [0]]
+
         else:
-            if self.archive_t[index] == t:
-                self.last_used_archive_index = index
-                return self.archive_y[:, self.last_used_archive_index]
-            elif self.archive_t[index] > t:
-                self.last_used_archive_index = index - 1
-                return self.output_linear_regression(t, index)
+
+            index = np.searchsorted(self.archive_t, t)
+
+            if index >= len(self.archive_t):
+                self.last_used_archive_index = len(self.archive_t) - 2
+                return self.output_linear_regression(t, len(self.archive_t) - 1)
             else:
-                self.last_used_archive_index = index - 2
-                return self.output_linear_regression(t, index - 1)
+                if self.archive_t[index] == t:
+                    self.last_used_archive_index = index
+                    return self.archive_y[:, [self.last_used_archive_index]]
+                elif self.archive_t[index] > t:
+                    self.last_used_archive_index = index - 1
+                    return self.output_linear_regression(t, index)
+                else:
+                    self.last_used_archive_index = index - 2
+                    return self.output_linear_regression(t, index - 1)
 
         # for i in range(self.last_used_archive_index, len(self.archive_t)):
         #
@@ -561,9 +624,40 @@ class System(ABC):
         # self.last_used_archive_index = len(self.archive_t) - 2
         # return self.linear_regression(t, len(self.archive_t) - 1)
 
+    # def linear_regression(self, t, i):
+    #
+    #     output_vector = np.zeros(self.number_of_outputs)
+    #
+    #     system_matrix = np.array([[self.archive_t[i - 1], 1],
+    #                               [self.archive_t[i], 1]])
+    #
+    #     for output_index in range(0, self.number_of_outputs):
+    #         vector_of_right_sides = np.array([[self.archive_y[output_index][i - 1]],
+    #                                           [self.archive_y[output_index][i]]])
+    #
+    #         vector_x = np.linalg.inv(system_matrix) @ vector_of_right_sides
+    #
+    #         y = vector_x[0] * t + vector_x[1]
+    #
+    #         output_vector[output_index] = y[0]
+    #
+    #     return output_vector
+    #
+    #     # system_matrix = np.array([[self.archive_t[i - 1], 1],
+    #     #                           [self.archive_t[i], 1]])
+    #     #
+    #     # vector_of_right_sides = np.array([[self.archive_y[self.output_index][i - 1]],
+    #     #                                   [self.archive_y[self.output_index][i]]])
+    #     #
+    #     # vector_x = np.linalg.inv(system_matrix) @ vector_of_right_sides
+    #     #
+    #     # y = vector_x[0] * t + vector_x[1]
+    #     #
+    #     # return y[0]
+
     def linear_regression(self, t, i, data, number_of_items):
 
-        result_vector = np.zeros(number_of_items)
+        result_vector = np.zeros([number_of_items, 1])
 
         system_matrix = np.array([[self.archive_t[i - 1], 1],
                                   [self.archive_t[i], 1]])
@@ -666,16 +760,161 @@ class System(ABC):
 
         return 0.0
 
+    @property
+    def cls(self):
+        return type(self).__name__
+
 
 # ----------------------------------------------------------------------------
 
 
-class LinearSystem(System):
+class DynamicSystem(System, ABC):
+
+    def __init__(self, dt0=1.5e-5, t0=0, x0=0,
+                 number_of_inputs=1, number_of_outputs=1,
+                 allowed_error=1e-6, dt_max=1e-2):
+        """
+
+        Parameters
+        ----------
+        dt0: float
+        t0: float
+        x0: numpy.ndarray/float
+        number_of_inputs: int
+        number_of_outputs: int
+        allowed_error: float
+        dt_max: float
+        """
+
+        super().__init__(dt0, t0, x0,
+                         number_of_inputs, number_of_outputs,
+                         allowed_error, dt_max)
+
+    def step(self, end_of_pool_step):
+
+        while self.t < end_of_pool_step:
+
+            if self.t + self.dt > end_of_pool_step:
+                self.dt = end_of_pool_step - self.t
+
+            self.t = self.t + self.dt
+
+            # if self.t > end_of_pool_step:
+            #     self.dt = self.t - end_of_pool_step
+            #     self.t = end_of_pool_step
+
+            self.update_input()
+            self.runge_kutta_step()
+            # self.runge_kutta_45_step()
+            # self.runge_kutta_fehlberg_step(end_of_pool_step)
+            self.update_output()
+
+            if self.dt != self.dt0:
+                self.dt = self.dt0
+
+            self.data_archiving()
+
+
+# ----------------------------------------------------------------------------
+
+
+class NonDynamicSystem(System, ABC):
+
+    def __init__(self, dt0=1.5e-5, t0=0, x0=0,
+                 number_of_inputs=2, number_of_outputs=2,
+                 allowed_error=1e-6, dt_max=1e-2):
+        """
+
+        Parameters
+        ----------
+        dt0: float
+        t0: float
+        x0: numpy.ndarray/float
+        number_of_inputs: int
+        number_of_outputs: int
+        allowed_error: float
+        dt_max: float
+        """
+
+        super().__init__(dt0, t0, x0,
+                         number_of_inputs, number_of_outputs,
+                         allowed_error, dt_max)
+
+    def step(self, end_of_pool_step):
+
+        while self.t < end_of_pool_step:
+            self.t = self.t + self.dt
+
+            if self.t > end_of_pool_step:
+                self.t = end_of_pool_step
+
+            self.update_input()
+            self.update_state()
+            self.update_output()
+
+            self.data_archiving()
+
+    def adaptive_step(self, end_of_pool_step):
+
+        self.step(end_of_pool_step)
+
+    @abstractmethod
+    def update_state(self):
+
+        pass
+
+
+# ----------------------------------------------------------------------------
+
+
+class StaticSystem(NonDynamicSystem, ABC):
+
+    def __init__(self, dt0=1.5e-5, t0=0, x0=0,
+                 number_of_inputs=2, number_of_outputs=2,
+                 allowed_error=1e-6, dt_max=1e-2):
+        """
+
+        Parameters
+        ----------
+        dt0: float
+        t0: float
+        x0: numpy.ndarray/float
+        number_of_inputs: int
+        number_of_outputs: int
+        allowed_error: float
+        dt_max: float
+        """
+
+        super().__init__(dt0, t0, x0,
+                         number_of_inputs, number_of_outputs,
+                         allowed_error, dt_max)
+
+
+# ----------------------------------------------------------------------------
+
+
+class LinearSystem(DynamicSystem):
 
     def __init__(self, A, B, C, D,
                  dt0=1.5e-5, t0=0, x0=0,
                  number_of_inputs=1, number_of_outputs=1,
                  allowed_error=1e-6, dt_max=1e-2):
+        """
+
+        Parameters
+        ----------
+        A: numpy.ndarray
+        B: numpy.ndarray
+        C: numpy.ndarray
+        D: numpy.ndarray
+        dt0: float
+        t0: float
+        x0: numpy.ndarray/float
+        number_of_inputs: int
+        number_of_outputs: int
+        allowed_error: float
+        dt_max: float
+        """
 
         super().__init__(dt0, t0, x0,
                          number_of_inputs, number_of_outputs,
@@ -1022,11 +1261,23 @@ class LinearSystem(System):
 # ----------------------------------------------------------------------------
 
 
-class PartiallyNonlinearSystem(System, ABC):
+class PartiallyNonLinearSystem(DynamicSystem, ABC):
 
     def __init__(self, dt0=1.5e-5, t0=0, x0=0,
                  number_of_inputs=1, number_of_outputs=1,
                  allowed_error=1e-6, dt_max=1e-2):
+        """
+
+        Parameters
+        ----------
+        dt0: float
+        t0: float
+        x0: numpy.ndarray/float
+        number_of_inputs: int
+        number_of_outputs: int
+        allowed_error: float
+        dt_max: float
+        """
 
         super().__init__(dt0, t0, x0,
                          number_of_inputs, number_of_outputs,
