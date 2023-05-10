@@ -768,7 +768,7 @@ class System(ABC):
 # ----------------------------------------------------------------------------
 
 
-class DynamicSystem(System, ABC):
+class StateSpaceSystem(System, ABC):
 
     def __init__(self, dt0=1.5e-5, t0=0, x0=0,
                  number_of_inputs=1, number_of_outputs=1,
@@ -818,7 +818,7 @@ class DynamicSystem(System, ABC):
 # ----------------------------------------------------------------------------
 
 
-class NonDynamicSystem(System, ABC):
+class NonStateSpaceSystem(System, ABC):
 
     def __init__(self, dt0=1.5e-5, t0=0, x0=0,
                  number_of_inputs=2, number_of_outputs=2,
@@ -867,33 +867,7 @@ class NonDynamicSystem(System, ABC):
 # ----------------------------------------------------------------------------
 
 
-class StaticSystem(NonDynamicSystem, ABC):
-
-    def __init__(self, dt0=1.5e-5, t0=0, x0=0,
-                 number_of_inputs=2, number_of_outputs=2,
-                 allowed_error=1e-6, dt_max=1e-2):
-        """
-
-        Parameters
-        ----------
-        dt0: float
-        t0: float
-        x0: numpy.ndarray/float
-        number_of_inputs: int
-        number_of_outputs: int
-        allowed_error: float
-        dt_max: float
-        """
-
-        super().__init__(dt0, t0, x0,
-                         number_of_inputs, number_of_outputs,
-                         allowed_error, dt_max)
-
-
-# ----------------------------------------------------------------------------
-
-
-class LinearSystem(DynamicSystem):
+class LinearSystem(StateSpaceSystem):
 
     def __init__(self, A, B, C, D,
                  dt0=1.5e-5, t0=0, x0=0,
@@ -1261,7 +1235,7 @@ class LinearSystem(DynamicSystem):
 # ----------------------------------------------------------------------------
 
 
-class PartiallyNonLinearSystem(DynamicSystem, ABC):
+class PartiallyNonLinearSystem(StateSpaceSystem, ABC):
 
     def __init__(self, dt0=1.5e-5, t0=0, x0=0,
                  number_of_inputs=1, number_of_outputs=1,

@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from DynaSys import NonDynamicSystem
+from DynaSys import NonStateSpaceSystem
 
 import numpy as np
 
 
-class Source(NonDynamicSystem, ABC):
+class Source(NonStateSpaceSystem, ABC):
 
     def __init__(self, number_of_inputs, number_of_outputs,
                  dt0=1.5e-5, t0=0, x0=0):
