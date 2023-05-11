@@ -5,14 +5,11 @@ from dynsypy import *
 
 
 # TODO: alokace pameti pred vypoctem
-# TODO: rovnice motoru v maticovem tvaru => nova trida Matrix,
-#  NonlinearSystem + potomek uvazujici maticovy popis (kvazinelinearni, ...)
 # TODO: rovnice v dq
 # TODO: integrace v extra modulu (třída nebo funkce)
 
 
 def plotter(t_array, y_array):
-
     # plt.plot(t_array, y_array[0], 'g', label='$i_L(t)$')
     # plt.grid()
 
@@ -50,7 +47,6 @@ def plotter(t_array, y_array):
 
 
 def plotter_log_axis(freq_array, val_array):
-
     ax1 = plt.subplot(211)
     plt.semilogx(freq_array, val_array[0, :],
                  color="green", label='$A(f)\ [$dB$]$')
@@ -72,9 +68,11 @@ def plotter_log_axis(freq_array, val_array):
     plt.show()
 
 
+plt.rcParams['text.usetex'] = True
+
 t0 = 0
 # dt0 = 1.5e-5
-t_end = 1
+t_end = 0.3
 
 x0 = np.array([[0.0],
                [0.0],
@@ -82,8 +80,8 @@ x0 = np.array([[0.0],
                [0.0],
                [0.0]])
 
-f = 50
-U = np.sqrt(2) * 380     # 150
+f_s_n = 50
+U_s_n = 380
 
 motor_params = {
     "R_s": 1.617,
@@ -93,13 +91,15 @@ motor_params = {
     "L_h": 134.4e-3,
     "p_p": 2,
     "N_n": 1420,
-    "U_s_n": 380,   # 3x380
-    "f_s_n": 50,
+    "U_s_n": U_s_n,  # 3x380
+    "f_s_n": f_s_n,
     "I_s_n": 8.5,
     "J": 0.03,
     "k_p": 1.5
 }
 
+f = f_s_n
+U = np.sqrt(2) * U_s_n  # 150
 number_of_phases = 3
 
 source_params = {
@@ -110,284 +110,206 @@ source_params = {
 }
 
 PI_controller_params = {
-    "K": 2/3,
+    "K": 2 / 3,
     "T_i": 0.05,
     "saturation_value": 2 * np.pi * 5
 }
 
-# source_U_params = {
-#     "amplitude": U,
-#     "frequency": f,
-#     "phase": 0
-# }
-#
-# source_V_params = {
-#     "amplitude": U,
-#     "frequency": f,
-#     "phase": 4 * np.pi / 3
-# }
-#
-# source_W_params = {
-#     "amplitude": U,
-#     "frequency": f,
-#     "phase": 2 * np.pi / 3
-# }
+############################
+# direct source connection #
+############################
 
-# source_U_params = {
-#     "amplitude": U,
-#     "frequency": f,
-#     "number_of_phases": 1,
-#     "phase": 0
-# }
-#
-# source_V_params = {
-#     "amplitude": U,
-#     "frequency": f,
-#     "number_of_phases": 1,
-#     "phase": 4 * np.pi / 3
-# }
-#
-# source_W_params = {
-#     "amplitude": U,
-#     "frequency": f,
-#     "number_of_phases": 1,
-#     "phase": 2 * np.pi / 3
-# }
-
-# amplitude = UnitStep(final_value=U, initial_value=0.0, step_time=0)
-# frequency = UnitStep(final_value=f, initial_value=0.0, step_time=0)
-
-required_speed = UnitStep(final_value=2 * np.pi * 10, initial_value=2 * np.pi * 20, step_time=0.5)
-load_torque = UnitStep(final_value=70, initial_value=25, step_time=0.3)
-# load_torque = UnitStep(final_value=0, initial_value=0.0, step_time=0)
-
-controller = PIController(PI_controller_params)
-scalar_control = ASMScalarControl(motor_params)
-
-# phase_U = Sine(source_U_params)
-# phase_V = Sine(source_V_params)
-# phase_W = Sine(source_W_params)
+amplitude = UnitStep(step_time=0, initial_value=0.0, final_value=U)
+frequency = UnitStep(step_time=0, initial_value=0.0, final_value=f)
+load_torque = UnitStep(step_time=0, initial_value=0.0, final_value=0)
 
 source_3_f = ControlledNPhaseSine(source_params)
-
-# phase_U = ControlledNPhaseSine(source_U_params)
-# phase_V = ControlledNPhaseSine(source_V_params)
-# phase_W = ControlledNPhaseSine(source_W_params)
 
 motor = AsynchronousMachine(motor_params,
                             x0=x0, number_of_inputs=4, dt0=5e-5)
 
-controller.connect(required_speed.output, 0)
-controller.connect(motor.output, 1, [3])
-
-scalar_control.connect(controller.output, 0)
-scalar_control.connect(motor.output, 1, [3])
-
-source_3_f.connect(scalar_control.output, 0)
-
-# source_3_f.connect(amplitude.output, 0)
-# source_3_f.connect(frequency.output, 1)
-
-# phase_U.connect(amplitude.output, 0)
-# phase_U.connect(frequency.output, 1)
-#
-# phase_V.connect(amplitude.output, 0)
-# phase_V.connect(frequency.output, 1)
-#
-# phase_W.connect(amplitude.output, 0)
-# phase_W.connect(frequency.output, 1)
-
-# motor.connect(phase_U.output, 0)
-# motor.connect(phase_V.output, 1)
-# motor.connect(phase_W.output, 2)
+source_3_f.connect(amplitude.output, 0)
+source_3_f.connect(frequency.output, 1)
 
 motor.connect(source_3_f.output, 0)
 motor.connect(load_torque.output, 1)
 
-# pool = Pool(1e-4, t_end, t0, True)
-pool = Pool(0.7e-4, t_end, t0, False)
+pool = Pool(1e-2, t_end, t0, True)
 
-# pool.add(amplitude)
-# pool.add(frequency)
-pool.add(required_speed)
+pool.add(amplitude)
+pool.add(frequency)
 
 pool.add(load_torque)
-pool.add(controller)
-pool.add(scalar_control)
 
 pool.add(source_3_f)
 
-# pool.add(phase_U)
-# pool.add(phase_V)
-# pool.add(phase_W)
-
 pool.add(motor)
 
-# t0 = 0
-# # dt0 = 1.5e-5
-# t_end = 0.15
-#
-# i_a0 = 0.0
-# omega0 = 0.0
-#
-# x0 = np.array([[i_a0],
-#                [omega0]])
-#
-# u_a = 5
-# M_L = 0.1
-#
-# R_a = 2.7
-# L_a = 4e-3
-# k_a = 0.105
-# J = 1e-4
-# B_m = 93e-7
-#
-# A = np.array([[-R_a / L_a, -k_a / L_a],
-#               [k_a / J, -B_m / J]])
-#
-# B = np.array([[1 / L_a, 0],
-#               [0, -1 / J]])
-#
-# C = np.array([[1, 0],
-#               [0, 1]])
-#
-# D = np.array([[0, 0],
-#               [0, 0]])
-#
-#
-# pool = Pool(0.01, t_end, t0)
-#
-# voltage = UnitStep(u_a)
-#
-# load_torque = UnitStep(M_L)
-#
-# DC_motor = LinearSystem(A, B, C, D, t0=t0, x0=x0,
-#                         number_of_inputs=2, number_of_outputs=2)
-#
-# # # DC_motor = LinearSystem(A, B, C, D, dt0=dt0, t0=t0, x0=x0,
-# # #                         number_of_inputs=2, number_of_outputs=2)
-# DC_motor.connect(voltage.output, 0)
-# DC_motor.connect(load_torque.output, 1)
-#
-# pool.add(DC_motor)
-
-# iL0 = 0.0
-# uC0 = 0.0
-#
-# t0 = 0
-# dt0 = 1.5e-5
-# t_end = 0.5
-#
-# U0 = 50
-# R = 5
-# L = 0.1
-# C = 0.001
-
-# R = 10
-# L = 0.01
-# C = 0.1
-
-# x0 = np.array([[iL0],
-#                [uC0]])
-#
-# x01 = np.array([[uC0]])
-#
-# # sériový RLC obvod s jedním zdrojem napětí
-# # výstupem je uC
-# A1 = np.array([[-R / L, -1 / L],
-#                [1 / C, 0]])
-#
-# B1 = np.array([[1 / L],
-#                [0]])
-#
-# C1 = np.array([[0.0, 1.0]])
-#
-# D1 = np.array([[0]])
-
-# # sériový RLC obvod se dvěma zdroji napětí
-# # výstupem je uC
-# A2 = np.array([[-R / L, -1 / L],
-#                [1 / C, 0]])
-#
-# B2 = np.array([[1 / L, 1 / L],
-#                [0, 0]])
-#
-# C2 = np.array([[0.0, 1.0]])
-#
-# D2 = np.array([[0, 0]])
-#
-# # sériový RLC obvod se dvěma zdroji napětí
-# # výstupem je uC a uL
-# A3 = np.array([[-R / L, -1 / L],
-#                [1 / C, 0]])
-#
-# B3 = np.array([[1 / L, 1 / L],
-#                [0, 0]])
-#
-# C3 = np.array([[0, 1],
-#                [-R, -1]])
-#
-# D3 = np.array([[0, 0],
-#                [1, 1]])
-#
-# # sériový RC obvod s jedním zdrojem napětí
-# # výstupem je uC
-# A4 = np.array([[-1/(R*C)]])
-#
-# B4 = np.array([[1]])
-#
-# C4 = np.array([[1]])
-#
-# D4 = np.array([[0]])
-
-
-# omega_range = np.logspace(1, 1e3, 100)
-#
-#
-# pool = Pool(0.01, t_end, t0)
-#
-# sine = Sine(U0, 100, np.pi)
-#
-# unit_step = UnitStep(U0)
-
-# transient = LinearSystem(A3, B3, C3, D3, t0=t0, x0=x0,
-#                          number_of_inputs=2, number_of_outputs=2, allowed_error=1e-7)
-# transient.connect(unit_step.output, 0)
-# transient.connect(sine.output, 1)
-
-# transient = LinearSystem(A4, B4, C4, D4, dt0, t0, x01)
-# transient.connect(unit_step.output)
-
-# transient.select_output(1)
-
-# transient_2 = LinearSystem(A1, B1, C1, D1, t0=t0, x0=x0, allowed_error=1e-7)
-# transient_2.connect(unit_step.output)
-
-# transient_2 = LinearSystem(A1, B1, C1, D1, x0=x0)
-#
-# transient_2.frequency_analysis()
-
-# pool.add(transient)
-# pool.add(transient_2)
-# # pool.add(sine)
-#
 pool.simulate()
 
-# # plotter(transient.archive_t, transient.archive_x)
-# plotter(transient_2.archive_t, transient_2.archive_x)
-# # plotter(sine.archive_t, sine.archive_x)
+# fig, axs = plt.subplots(2)
+# axs[0].plot(motor.archive_t, motor.archive_y[0, :],
+#             motor.archive_t, motor.archive_y[1, :],
+#             motor.archive_t, motor.archive_y[2, :])
+# axs[0].grid(which='major')
+# axs[0].grid(which='minor', linestyle=':', linewidth=0.5)
+# axs[0].minorticks_on()
+#
+# axs[1].plot(motor.archive_t, motor.archive_y[3, :])
+# axs[1].grid(which='major')
+# axs[1].grid(which='minor', linestyle=':', linewidth=0.5)
+# axs[1].minorticks_on()
+#
+# plt.xlabel('$t\ (\\mathrm{s})$')
 
-# plotter(DC_motor.archive_t, DC_motor.archive_y)
-# plotter(motor.archive_t, motor.archive_y)
+plt.plot(motor.archive_t, motor.archive_u[0, :],
+         motor.archive_t, motor.archive_u[1, :],
+         motor.archive_t, motor.archive_u[2, :])
+plt.grid(which='major')
+plt.grid(which='minor', linestyle=':', linewidth=0.5)
+plt.minorticks_on()
+plt.xlim([0, 0.3])
+# plt.ylim([-100, 120])
+plt.xlabel('$t\ (\mathrm{s})$')
+plt.ylabel('$u_{\mathrm{s}}\ (\mathrm{V})$')
+plt.savefig('DynSyPy_ASM_direct_u_s.pdf')
 
-# plotter_log_axis(transient_2.archive_frequency, transient_2.archive_bode)
+plt.clf()
 
-# fig, axs = plt.subplots(3)
-# axs[0].plot(out[:, [0]], out[:, [1, 2, 3]])
-# # axs[1].plot(out[:, [0]], out[:, [4, 5]])
-# # axs[2].plot(out[:, [0]], out[:, [6, 7]])
-# axs[1].plot(out[:, [0]], out[:, [8, 9, 10]])
-# axs[2].plot(out[:, [0]], out[:, [13]])
+plt.plot(motor.archive_t, motor.archive_y[0, :],
+         motor.archive_t, motor.archive_y[1, :],
+         motor.archive_t, motor.archive_y[2, :])
+plt.grid(which='major')
+plt.grid(which='minor', linestyle=':', linewidth=0.5)
+plt.minorticks_on()
+plt.xlim([0, 0.3])
+plt.ylim([-100, 120])
+plt.xlabel('$t\ (\mathrm{s})$')
+plt.ylabel('$i_{\mathrm{s}}\ (\mathrm{A})$')
+plt.savefig('DynSyPy_ASM_direct_i_s.pdf')
+
+plt.clf()
+
+plt.plot(motor.archive_t, motor.archive_y[3, :])
+plt.grid(which='major')
+plt.grid(which='minor', linestyle=':', linewidth=0.5)
+plt.minorticks_on()
+plt.xlim([0, 0.3])
+plt.ylim([0, 180])
+plt.xlabel('$t\ (\mathrm{s})$')
+plt.ylabel('$\omega_{\mathrm{m}}\ (\mathrm{rad}\cdot\mathrm{s}^{-1})$')
+plt.savefig('DynSyPy_ASM_direct_omega_m.pdf')
+
+#######################
+# scalar control loop #
+#######################
+
+# required_speed = UnitStep(step_time=0.5, initial_value=2 * np.pi * 20, final_value=2 * np.pi * 10)
+# load_torque = UnitStep(step_time=0.3, initial_value=25, final_value=70)
+#
+# # required_speed = UnitStep(step_time=0.8, initial_value=100, final_value=170)
+# # load_torque = UnitStep(step_time=0.5, initial_value=35, final_value=70)
+# # load_torque = UnitStep(step_time=0, initial_value=0.0, final_value=0)
+#
+# controller = PIController(PI_controller_params)
+# scalar_control = ASMScalarControl(motor_params)
+#
+# source_3_f = ControlledNPhaseSine(source_params)
+#
+# motor = AsynchronousMachine(motor_params,
+#                             x0=x0, number_of_inputs=4, dt0=5e-5)
+#
+# controller.connect(required_speed.output, 0)
+# controller.connect(motor.output, 1, [3])
+#
+# scalar_control.connect(controller.output, 0)
+# scalar_control.connect(motor.output, 1, [3])
+#
+# source_3_f.connect(scalar_control.output, 0)
+#
+# motor.connect(source_3_f.output, 0)
+# motor.connect(load_torque.output, 1)
+#
+# # pool = Pool(1e-4, t_end, t0, True)
+# pool = Pool(1.3e-4, t_end, t0, False)
+#
+# pool.add(required_speed)
+#
+# pool.add(load_torque)
+# pool.add(controller)
+# pool.add(scalar_control)
+#
+# pool.add(source_3_f)
+#
+# pool.add(motor)
+#
+# pool.simulate()
+#
+# plt.plot(controller.archive_t, controller.archive_y[0, :])
+# plt.grid(which='major')
+# plt.grid(which='minor', linestyle=':', linewidth=0.5)
+# plt.minorticks_on()
+# plt.xlim([0, t_end])
+# # plt.ylim([0, 180])
+# plt.xlabel('$t\ (\mathrm{s})$')
+# plt.ylabel('$\omega_{\mathrm{rw}}\ (\mathrm{rad}\cdot\mathrm{s}^{-1})$')
+# plt.savefig('DynSyPy_ASM_reg_omega_rw.pdf')
+#
+# plt.clf()
+#
+# # plt.plot(scalar_control.archive_t, scalar_control.archive_y[0, :], label='$U_{\mathrm{sw}}$')
+# # plt.plot(scalar_control.archive_t, scalar_control.archive_y[1, :], label='$\omega_{\mathrm{m}}$')
+# # plt.grid(which='major')
+# # plt.grid(which='minor', linestyle=':', linewidth=0.5)
+# # plt.minorticks_on()
+# # plt.xlim([0, t_end])
+# # # plt.ylim([0, 180])
+# # plt.xlabel('$t\ (\mathrm{s})$')
+# # plt.ylabel('$\omega\ (\mathrm{rad}\cdot\mathrm{s}^{-1})$')
+# # plt.legend(loc='best')
+# # plt.savefig('DynSyPy_ASM_reg_omega_m.pdf')
+#
+# # plt.clf()
+#
+# plt.plot(motor.archive_t, motor.archive_u[0, :],
+#          motor.archive_t, motor.archive_u[1, :],
+#          motor.archive_t, motor.archive_u[2, :])
+# plt.grid(which='major')
+# plt.grid(which='minor', linestyle=':', linewidth=0.5)
+# plt.minorticks_on()
+# plt.xlim([0, t_end])
+# # plt.ylim([-100, 120])
+# plt.xlabel('$t\ (\mathrm{s})$')
+# plt.ylabel('$u_{\mathrm{s}}\ (\mathrm{V})$')
+# plt.savefig('DynSyPy_ASM_reg_u_s.pdf')
+#
+# plt.clf()
+#
+# plt.plot(motor.archive_t, motor.archive_y[0, :],
+#          motor.archive_t, motor.archive_y[1, :],
+#          motor.archive_t, motor.archive_y[2, :])
+# plt.grid(which='major')
+# plt.grid(which='minor', linestyle=':', linewidth=0.5)
+# plt.minorticks_on()
+# plt.xlim([0, t_end])
+# # plt.ylim([-100, 120])
+# plt.xlabel('$t\ (\mathrm{s})$')
+# plt.ylabel('$i_{\mathrm{s}}\ (\mathrm{A})$')
+# plt.savefig('DynSyPy_ASM_reg_i_s.pdf')
+#
+# plt.clf()
+#
+# plt.plot(required_speed.archive_t, required_speed.archive_y, label='$\omega_{\mathrm{mw}}$')
+# plt.plot(motor.archive_t, motor.archive_y[3, :], label='$\omega_{\mathrm{m}}$')
+# plt.grid(which='major')
+# plt.grid(which='minor', linestyle=':', linewidth=0.5)
+# plt.minorticks_on()
+# plt.xlim([0, t_end])
+# # plt.ylim([0, 180])
+# plt.xlabel('$t\ (\mathrm{s})$')
+# plt.ylabel('$\omega\ (\mathrm{rad}\cdot\mathrm{s}^{-1})$')
+# plt.legend(loc='best')
+# plt.savefig('DynSyPy_ASM_reg_omega_m.pdf')
 
 # plt.plot(motor.archive_t, motor.archive_u[0, :],
 #          motor.archive_t, motor.archive_u[1, :],
@@ -403,14 +325,14 @@ pool.simulate()
 # axs[2].plot(motor.archive_t, motor.archive_y[4, :])
 # axs[2].grid()
 
-fig, axs = plt.subplots(2)
-axs[0].plot(motor.archive_t, motor.archive_y[0, :],
-            motor.archive_t, motor.archive_y[1, :],
-            motor.archive_t, motor.archive_y[2, :])
-axs[0].grid()
-axs[1].plot(motor.archive_t, motor.archive_y[3, :],
-            required_speed.archive_t, required_speed.archive_y)
-axs[1].grid()
+# fig, axs = plt.subplots(2)
+# axs[0].plot(motor.archive_t, motor.archive_y[0, :],
+#             motor.archive_t, motor.archive_y[1, :],
+#             motor.archive_t, motor.archive_y[2, :])
+# axs[0].grid()
+# axs[1].plot(motor.archive_t, motor.archive_y[3, :],
+#             required_speed.archive_t, required_speed.archive_y)
+# axs[1].grid()
 
 # fig, axs = plt.subplots(3)
 # axs[0].plot(motor.archive_t, motor.archive_x[0, :],
@@ -432,10 +354,6 @@ axs[1].grid()
 # for i in range(0, number_of_phases):
 #     plt.plot(source.archive_t, source.archive_y[i, :])
 # plt.grid()
-
-# plt.plot(phase_U.archive_t, phase_U.archive_x,
-#          phase_V.archive_t, phase_V.archive_x,
-#          phase_W.archive_t, phase_W.archive_x)
 
 # plt.savefig('asm.pdf')
 

@@ -151,7 +151,7 @@ class Cosine(HarmonicFunctions):
 
 class UnitStep(UncontrolledSource):
 
-    def __init__(self, final_value=1, initial_value=0.0, step_time=0, dt0=1.5e-5, t0=0):
+    def __init__(self, step_time=0, initial_value=0.0, final_value=1, dt0=1.5e-5, t0=0):
 
         super().__init__(1, dt0, t0)
 
