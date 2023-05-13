@@ -51,7 +51,7 @@ class Machine(PartiallyNonLinearSystem, ABC):
 # ----------------------------------------------------------------------------
 
 
-class AsynchronousMachine(Machine):
+class SquirrelCageIM(Machine):
 
     def __init__(self, parameters, dt0=1.5e-5, t0=0, x0=0,
                  number_of_inputs=4, allowed_error=1e-6, dt_max=1e-2):
@@ -69,12 +69,13 @@ class AsynchronousMachine(Machine):
         self.L_r_sigma = parameters["L_r_sigma"]    # 8.5e-3
         self.L_h = parameters["L_h"]    # 134.4e-3
         self.p_p = parameters["p_p"]    # 2
-        self.N_n = parameters["N_n"]    # 1420
-        self.U_s_n = parameters["U_s_n"]    # 150  # 380    # 3x380
-        self.f_s_n = parameters["f_s_n"]    # 50
-        self.I_s_n = parameters["I_s_n"]    # 8.5
+        # self.N_n = parameters["N_n"]    # 1420
+        # self.U_s_n = parameters["U_s_n"]    # 150  # 380    # 3x380
+        # self.f_s_n = parameters["f_s_n"]    # 50
+        # self.I_s_n = parameters["I_s_n"]    # 8.5
         self.J = parameters["J"]        # 0.03
-        self.k_p = parameters["k_p"]    # 1.5
+        # self.k_p = parameters["k_p"]    # 1.5
+        self.k_p = 1.5  # the value of the constant when using an amplitude-invariant transformation
 
         self.L_s = self.L_s_sigma + self.L_h
         self.L_r = self.L_r_sigma + self.L_h
@@ -88,9 +89,9 @@ class AsynchronousMachine(Machine):
         self.delta = 1 / lmb
         self.epsilon = ((self.k_p * self.p_p) / self.J) * (self.L_h / self.L_r)
 
-        self.M_z = 0  # Load torque
-
-        self.Theta = 0
+        # self.M_z = 0  # Load torque
+        #
+        # self.Theta = 0
 
         a_init = np.array(
             [[-self.alpha, 0, self.beta, self.gamma * self.x[4, 0], 0],
@@ -139,7 +140,7 @@ class AsynchronousMachine(Machine):
 
     def update_input(self):
 
-        super(AsynchronousMachine, self).update_input()
+        super(SquirrelCageIM, self).update_input()
 
         self.transform()
 

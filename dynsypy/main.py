@@ -83,6 +83,21 @@ x0 = np.array([[0.0],
 f_s_n = 50
 U_s_n = 380
 
+# motor_params = {
+#     "R_s": 1.617,
+#     "R_r": 1.609,
+#     "L_s_sigma": 8.5e-3,
+#     "L_r_sigma": 8.5e-3,
+#     "L_h": 134.4e-3,
+#     "p_p": 2,
+#     "N_n": 1420,
+#     "U_s_n": U_s_n,  # 3x380
+#     "f_s_n": f_s_n,
+#     "I_s_n": 8.5,
+#     "J": 0.03,
+#     "k_p": 1.5
+# }
+
 motor_params = {
     "R_s": 1.617,
     "R_r": 1.609,
@@ -90,12 +105,9 @@ motor_params = {
     "L_r_sigma": 8.5e-3,
     "L_h": 134.4e-3,
     "p_p": 2,
-    "N_n": 1420,
     "U_s_n": U_s_n,  # 3x380
     "f_s_n": f_s_n,
-    "I_s_n": 8.5,
-    "J": 0.03,
-    "k_p": 1.5
+    "J": 0.03
 }
 
 f = f_s_n
@@ -125,8 +137,8 @@ load_torque = UnitStep(step_time=0, initial_value=0.0, final_value=0)
 
 source_3_f = ControlledNPhaseSine(source_params)
 
-motor = AsynchronousMachine(motor_params,
-                            x0=x0, number_of_inputs=4, dt0=5e-5)
+motor = SquirrelCageIM(motor_params,
+                       x0=x0, number_of_inputs=4, dt0=5e-5)
 
 source_3_f.connect(amplitude.output, 0)
 source_3_f.connect(frequency.output, 1)

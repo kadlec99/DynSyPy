@@ -30,7 +30,7 @@ class Controllers(NonStateSpaceSystem, ABC):
 # ----------------------------------------------------------------------------
 
 
-class ASMScalarControl(Controllers):
+class IMScalarControl(Controllers):
 
     def __init__(self, parameters, dt0=1.5e-5, t0=0, x0=np.zeros([2, 1]),
                  number_of_inputs=2, number_of_outputs=2,
