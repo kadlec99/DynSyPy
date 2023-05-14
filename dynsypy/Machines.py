@@ -14,38 +14,33 @@ class Machine(PartiallyNonLinearSystem, ABC):
                          number_of_inputs, number_of_outputs,
                          allowed_error, dt_max)
 
-        self.C_p = 2 / 3 * np.array([[1, -1 / 2, -1 / 2],
+        self.C_a = 2 / 3 * np.array([[1, -1 / 2, -1 / 2],
                                      [0, np.sqrt(3) / 2, -np.sqrt(3) / 2]])
 
-        self.C_p_inv = np.array([[1, 0],
+        self.C_a_inv = np.array([[1, 0],
                                  [-1 / 2, np.sqrt(3) / 2],
                                  [-1 / 2, -np.sqrt(3) / 2]])
 
-    def clarke_transformation(self, signal_3_phase, reverse=False):
-
-        # if not reverse:
-        #     return 2 / 3 * self.C_p @ signal_3_phase
-        # else:
-        #     return 2 / 3 * self.C_p_inv @ signal_3_phase
+    def clarke_transformation(self, input_signal_vector, reverse=False):
 
         if not reverse:
-            return self.C_p @ signal_3_phase
+            return self.C_a @ input_signal_vector
         else:
-            return self.C_p_inv @ signal_3_phase
+            return self.C_a_inv @ input_signal_vector
 
     @staticmethod
-    def park_transformation(signal_alpha_beta, theta, reverse=False):
+    def park_transformation(input_signal_vector, theta, reverse=False):
 
         if not reverse:
             r_dq = np.array([[np.cos(theta), np.sin(theta)],
                              [-np.sin(theta), np.cos(theta)]])
 
-            return r_dq @ signal_alpha_beta
+            return r_dq @ input_signal_vector
         else:
             r_dq_inv = np.array([[np.cos(theta), -np.sin(theta)],
                                  [np.sin(theta), np.cos(theta)]])
 
-            return r_dq_inv @ signal_alpha_beta
+            return r_dq_inv @ input_signal_vector
 
 
 # ----------------------------------------------------------------------------
