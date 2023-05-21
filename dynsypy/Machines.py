@@ -64,10 +64,10 @@ class SquirrelCageIM(Machine):
         self.L_r_sigma = parameters["L_r_sigma"]    # 8.5e-3
         self.L_h = parameters["L_h"]    # 134.4e-3
         self.p_p = parameters["p_p"]    # 2
-        # self.N_n = parameters["N_n"]    # 1420
-        # self.U_s_n = parameters["U_s_n"]    # 150  # 380    # 3x380
-        # self.f_s_n = parameters["f_s_n"]    # 50
-        # self.I_s_n = parameters["I_s_n"]    # 8.5
+        # self.N_N = parameters["N_N"]    # 1420
+        # self.U_s_N = parameters["U_s_N"]    # 150  # 380    # 3x380
+        # self.f_s_N = parameters["f_s_N"]    # 50
+        # self.I_s_N = parameters["I_s_N"]    # 8.5
         self.J = parameters["J"]        # 0.03
         # self.k_p = parameters["k_p"]    # 1.5
         self.k_p = 1.5  # the value of the constant when using an amplitude-invariant transformation

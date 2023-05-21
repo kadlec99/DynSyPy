@@ -80,8 +80,8 @@ x0 = np.array([[0.0],
                [0.0],
                [0.0]])
 
-f_s_n = 50
-U_s_n = 380
+f_s_N = 50
+U_s_N = 380
 
 # motor_params = {
 #     "R_s": 1.617,
@@ -90,10 +90,10 @@ U_s_n = 380
 #     "L_r_sigma": 8.5e-3,
 #     "L_h": 134.4e-3,
 #     "p_p": 2,
-#     "N_n": 1420,
-#     "U_s_n": U_s_n,  # 3x380
-#     "f_s_n": f_s_n,
-#     "I_s_n": 8.5,
+#     "N_N": 1420,
+#     "U_s_N": U_s_N,  # 3x380
+#     "f_s_N": f_s_N,
+#     "I_s_N": 8.5,
 #     "J": 0.03,
 #     "k_p": 1.5
 # }
@@ -105,13 +105,13 @@ motor_params = {
     "L_r_sigma": 8.5e-3,
     "L_h": 134.4e-3,
     "p_p": 2,
-    "U_s_n": U_s_n,  # 3x380
-    "f_s_n": f_s_n,
+    "U_s_N": U_s_N,  # 3x380
+    "f_s_N": f_s_N,
     "J": 0.03
 }
 
-f = f_s_n
-U = np.sqrt(2) * U_s_n  # 150
+f = f_s_N
+U = np.sqrt(2) * U_s_N  # 150
 number_of_phases = 3
 
 source_params = {
@@ -127,90 +127,124 @@ PI_controller_params = {
     "saturation_value": 2 * np.pi * 5
 }
 
-############################
-# direct source connection #
-############################
+#######################
+# n-phase source demo #
+#######################
 
 amplitude = UnitStep(step_time=0, initial_value=0.0, final_value=U)
 frequency = UnitStep(step_time=0, initial_value=0.0, final_value=f)
-load_torque = UnitStep(step_time=0, initial_value=0.0, final_value=0)
 
 source_3_f = ControlledNPhaseSine(source_params)
 
-motor = SquirrelCageIM(motor_params,
-                       x0=x0, number_of_inputs=4, dt0=5e-5)
+source_5f_params = {
+    "amplitude": U,
+    "frequency": f,
+    "number_of_phases": 5,
+    "phase": 0
+}
+
+source_5_f = ControlledNPhaseSine(source_5f_params)
 
 source_3_f.connect(amplitude.output, 0)
 source_3_f.connect(frequency.output, 1)
 
-motor.connect(source_3_f.output, 0)
-motor.connect(load_torque.output, 1)
+source_5_f.connect(amplitude.output, 0)
+source_5_f.connect(frequency.output, 1)
 
-pool = Pool(1e-2, t_end, t0, True)
+pool = Pool(1e-2, 0.04, t0, False)
 
 pool.add(amplitude)
 pool.add(frequency)
 
-pool.add(load_torque)
-
 pool.add(source_3_f)
-
-pool.add(motor)
+pool.add(source_5_f)
 
 pool.simulate()
 
-# fig, axs = plt.subplots(2)
-# axs[0].plot(motor.archive_t, motor.archive_y[0, :],
-#             motor.archive_t, motor.archive_y[1, :],
-#             motor.archive_t, motor.archive_y[2, :])
-# axs[0].grid(which='major')
-# axs[0].grid(which='minor', linestyle=':', linewidth=0.5)
-# axs[0].minorticks_on()
-#
-# axs[1].plot(motor.archive_t, motor.archive_y[3, :])
-# axs[1].grid(which='major')
-# axs[1].grid(which='minor', linestyle=':', linewidth=0.5)
-# axs[1].minorticks_on()
-#
-# plt.xlabel('$t\ (\\mathrm{s})$')
+############################
+# direct source connection #
+############################
 
-plt.plot(motor.archive_t, motor.archive_u[0, :],
-         motor.archive_t, motor.archive_u[1, :],
-         motor.archive_t, motor.archive_u[2, :])
-plt.grid(which='major')
-plt.grid(which='minor', linestyle=':', linewidth=0.5)
-plt.minorticks_on()
-plt.xlim([0, 0.3])
+# amplitude = UnitStep(step_time=0, initial_value=0.0, final_value=U)
+# frequency = UnitStep(step_time=0, initial_value=0.0, final_value=f)
+# load_torque = UnitStep(step_time=0, initial_value=0.0, final_value=0)
+#
+# source_3_f = ControlledNPhaseSine(source_params)
+#
+# motor = SquirrelCageIM(motor_params,
+#                        x0=x0, number_of_inputs=4, dt0=5e-5)
+#
+# source_3_f.connect(amplitude.output, 0)
+# source_3_f.connect(frequency.output, 1)
+#
+# motor.connect(source_3_f.output, 0)
+# motor.connect(load_torque.output, 1)
+#
+# pool = Pool(1e-2, t_end, t0, True)
+#
+# pool.add(amplitude)
+# pool.add(frequency)
+#
+# pool.add(load_torque)
+#
+# pool.add(source_3_f)
+#
+# pool.add(motor)
+#
+# pool.simulate()
+#
+# # fig, axs = plt.subplots(2)
+# # axs[0].plot(motor.archive_t, motor.archive_y[0, :],
+# #             motor.archive_t, motor.archive_y[1, :],
+# #             motor.archive_t, motor.archive_y[2, :])
+# # axs[0].grid(which='major')
+# # axs[0].grid(which='minor', linestyle=':', linewidth=0.5)
+# # axs[0].minorticks_on()
+# #
+# # axs[1].plot(motor.archive_t, motor.archive_y[3, :])
+# # axs[1].grid(which='major')
+# # axs[1].grid(which='minor', linestyle=':', linewidth=0.5)
+# # axs[1].minorticks_on()
+# #
+# # plt.xlabel('$t\ (\\mathrm{s})$')
+#
+# plt.plot(motor.archive_t, motor.archive_u[0, :],
+#          motor.archive_t, motor.archive_u[1, :],
+#          motor.archive_t, motor.archive_u[2, :])
+# plt.grid(which='major')
+# plt.grid(which='minor', linestyle=':', linewidth=0.5)
+# plt.minorticks_on()
+# plt.xlim([0, 0.3])
+# # plt.ylim([-100, 120])
+# plt.xlabel('$t\ (\mathrm{s})$')
+# plt.ylabel('$u_{\mathrm{s}}\ (\mathrm{V})$')
+# plt.savefig('DynSyPy_ASM_direct_u_s.pdf')
+#
+# plt.clf()
+#
+# plt.plot(motor.archive_t, motor.archive_y[0, :],
+#          motor.archive_t, motor.archive_y[1, :],
+#          motor.archive_t, motor.archive_y[2, :])
+# plt.grid(which='major')
+# plt.grid(which='minor', linestyle=':', linewidth=0.5)
+# plt.minorticks_on()
+# plt.xlim([0, 0.3])
 # plt.ylim([-100, 120])
-plt.xlabel('$t\ (\mathrm{s})$')
-plt.ylabel('$u_{\mathrm{s}}\ (\mathrm{V})$')
-plt.savefig('DynSyPy_ASM_direct_u_s.pdf')
-
-plt.clf()
-
-plt.plot(motor.archive_t, motor.archive_y[0, :],
-         motor.archive_t, motor.archive_y[1, :],
-         motor.archive_t, motor.archive_y[2, :])
-plt.grid(which='major')
-plt.grid(which='minor', linestyle=':', linewidth=0.5)
-plt.minorticks_on()
-plt.xlim([0, 0.3])
-plt.ylim([-100, 120])
-plt.xlabel('$t\ (\mathrm{s})$')
-plt.ylabel('$i_{\mathrm{s}}\ (\mathrm{A})$')
-plt.savefig('DynSyPy_ASM_direct_i_s.pdf')
-
-plt.clf()
-
-plt.plot(motor.archive_t, motor.archive_y[3, :])
-plt.grid(which='major')
-plt.grid(which='minor', linestyle=':', linewidth=0.5)
-plt.minorticks_on()
-plt.xlim([0, 0.3])
-plt.ylim([0, 180])
-plt.xlabel('$t\ (\mathrm{s})$')
-plt.ylabel('$\omega_{\mathrm{m}}\ (\mathrm{rad}\cdot\mathrm{s}^{-1})$')
-plt.savefig('DynSyPy_ASM_direct_omega_m.pdf')
+# plt.xlabel('$t\ (\mathrm{s})$')
+# plt.ylabel('$i_{\mathrm{s}}\ (\mathrm{A})$')
+# plt.savefig('DynSyPy_ASM_direct_i_s.pdf')
+#
+# plt.clf()
+#
+# plt.plot(motor.archive_t, motor.archive_y[3, :])
+# plt.grid(which='major')
+# plt.grid(which='minor', linestyle=':', linewidth=0.5)
+# plt.minorticks_on()
+# plt.xlim([0, 0.3])
+# plt.ylim([0, 180])
+# plt.xlabel('$t\ (\mathrm{s})$')
+# plt.ylabel('$\omega_{\mathrm{m}}\ (\mathrm{rad}\cdot\mathrm{s}^{-1})$')
+# plt.savefig('DynSyPy_ASM_direct_omega_m.pdf')
 
 #######################
 # scalar control loop #

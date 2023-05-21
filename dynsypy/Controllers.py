@@ -40,14 +40,14 @@ class IMScalarControl(Controllers):
                          number_of_inputs, number_of_outputs,
                          allowed_error, dt_max)
 
-        self.K_U = (parameters["U_s_n"] * np.sqrt(2)) / parameters["f_s_n"]
+        self.K_U = (parameters["U_s_N"] * np.sqrt(2)) / parameters["f_s_N"]
         self.K_f_r =\
-            (parameters["U_s_n"] * np.sqrt(2) * parameters["R_s"]) / (parameters["f_s_n"] * parameters["R_r"])
+            (parameters["U_s_N"] * np.sqrt(2) * parameters["R_s"]) / (parameters["f_s_N"] * parameters["R_r"])
 
         self.rad_to_deg = 1 / (2 * np.pi)
         self.mech_rad_to_el_deg = parameters["p_p"] / (2 * np.pi)
 
-        self.U_s_max = parameters["U_s_n"] * np.sqrt(2)
+        self.U_s_max = parameters["U_s_N"] * np.sqrt(2)
 
     def update_state(self):
 
